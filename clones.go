@@ -103,7 +103,7 @@ func main() {
 		"vdj_.S29_clones.txt",
 	}
 	
-	var map_of_clones map[string][]clone
+	map_of_clones := make(map[string][]clone)
 
 	for _, sample_file := range sample_files {
 		clones := readclones(sample_file)
@@ -114,7 +114,9 @@ func main() {
 		}
 	}
 	cdrs := cdr_keys(map_of_clones)
-	println(cdrs[0])
+	println(cdrs[0],":",map_of_clones[cdrs[0]][0].cdr3aa)
+	println(cdrs[1],":",map_of_clones[cdrs[1]][0].cdr3aa)
+	println(cdrs[2],":",map_of_clones[cdrs[2]][0].cdr3aa)
 }
 
 
