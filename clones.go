@@ -81,24 +81,40 @@ func cdrs3aa(clones []clone) []string {
 	return cdrs
 }
 
-func main() {
-	samples_clones := [][]clone {
-		readclones("vdj_.S22_clones.txt"),
-		readclones("vdj_.S23_clones.txt"),
-		readclones("vdj_.S24_clones.txt"),
-		readclones("vdj_.S25_clones.txt"),
-		readclones("vdj_.S26_clones.txt"),
-		readclones("vdj_.S27_clones.txt"),
-		readclones("vdj_.S28_clones.txt"),
-		readclones("vdj_.S29_clones.txt"),
+func cdr_keys(map_of_clones map[string][]clone) []string {
+	keys := make([]string, len(map_of_clones))
+	i:=0
+	for key,_ := range map_of_clones {
+    keys[i] = key
+		i++
 	}
-	//we read everything in the collection
-	
-	//var common_clones [][] *clone
-	cdrs:=cdrs3aa(samples_clones[0])
-	println(cdrs[0])
-	println(cdrs[1])
+	return keys
+}
 
+func main() {
+	sample_files:=[] string{
+		"vdj_.S22_clones.txt",
+		"vdj_.S23_clones.txt",
+		"vdj_.S24_clones.txt",
+		"vdj_.S25_clones.txt",
+		"vdj_.S26_clones.txt",
+		"vdj_.S27_clones.txt",
+		"vdj_.S28_clones.txt",
+		"vdj_.S29_clones.txt",
+	}
+	
+	var map_of_clones map[string][]clone
+
+	for _, sample_file := range sample_files {
+		clones := readclones(sample_file)
+		cdrs := cdrs3aa(clones)
+		for n,cdr := range cdrs{
+				map_of_clones[cdr]=append(map_of_clones[cdr],clones[n])
+				//looks simple... but if there is no cdr key, map_of_clones[cdr] return zero []clones, so we append and thus init
+		}
+	}
+	cdrs := cdr_keys(map_of_clones)
+	println(cdrs[0])
 }
 
 
