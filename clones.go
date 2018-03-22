@@ -75,13 +75,16 @@ func readclones(filename string) []clone {
 	return clones
 }
 
+//extract cdr3aa from each clone in clones []clone
+//make a []srtring
 func cdrs3aa(clones []clone) []string {
 	cdrs := make([]string,len(clones))
 	for n, clone := range clones {cdrs[n]=clone.cdr3aa}
 	return cdrs
 }
 
-func cdr_keys(map_of_clones map[string][]clone) []string {
+//extract cdr keys from map [cdr][]*clone
+func cdr_keys(map_of_clones map[string][]*clone) []string {
 	keys := make([]string, len(map_of_clones))
 	i:=0
 	for key,_ := range map_of_clones {
@@ -91,8 +94,14 @@ func cdr_keys(map_of_clones map[string][]clone) []string {
 	return keys
 }
 
+func print_clones(clones []clone) []string {
+	cdrs := make([]string,len(clones))
+	for n, clone := range clones {cdrs[n]=clone.cdr3aa}
+	return cdrs
+}
+
 func main() {
-	sample_files:=[] string{
+	sample_files := []string{
 		"vdj_.S22_clones.txt",
 		"vdj_.S23_clones.txt",
 		"vdj_.S24_clones.txt",
@@ -102,21 +111,33 @@ func main() {
 		"vdj_.S28_clones.txt",
 		"vdj_.S29_clones.txt",
 	}
-	
-	map_of_clones := make(map[string][]clone)
 
+	//read all clone from file to clone table [samples][lines]
+	var samples_clones [][]clone 
 	for _, sample_file := range sample_files {
-		clones := readclones(sample_file)
-		cdrs := cdrs3aa(clones)
+		samples_clones = append(samples_clones,readclones(sample_file))
+	}
+
+	//
+	map_of_clones := make(map[string][]*clone)
+	
+	for _, sample_clones := range samples_clones {
+		cdrs := cdrs3aa(sample_clones)
 		for n,cdr := range cdrs{
-				map_of_clones[cdr]=append(map_of_clones[cdr],clones[n])
+				map_of_clones[cdr]=append(map_of_clones[cdr],&sample_clones[n])
 				//looks simple... but if there is no cdr key, map_of_clones[cdr] return zero []clones, so we append and thus init
 		}
 	}
-	cdrs := cdr_keys(map_of_clones)
-	println(cdrs[0],":",map_of_clones[cdrs[0]][0].cdr3aa)
-	println(cdrs[1],":",map_of_clones[cdrs[1]][0].cdr3aa)
-	println(cdrs[2],":",map_of_clones[cdrs[2]][0].cdr3aa)
+	
+	map_of_common_clones := make(map[string][]*clone)
+	for cdr, clones :=range map_of_clones {
+		if (len(clones) > 1) {
+			map_of_common_clones[cdr] = clones 
+		}
+	}
+
+	cdrs := cdr_keys(map_of_common_clones)
+	println(cdrs[0],":",map_of_common_clones[cdrs[0]][0].cdr3aa,",",map_of_common_clones[cdrs[0]][0].cdr3aa)
 }
 
 
