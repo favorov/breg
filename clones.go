@@ -23,9 +23,10 @@ type clone struct {
 	JStart int
 	count int64
 	freq float64
-	sample string
 //actual order in file:
 //count	freq	cdr3nt	cdr3aa	v	d	j	VEnd	DStart	DEnd	JStart
+	sample string
+//to know where it comes from
 }
 
 func readclones(filename string) []clone {
@@ -74,16 +75,30 @@ func readclones(filename string) []clone {
 	return clones
 }
 
+func cdrs3aa(clones []clone) []string {
+	cdrs := make([]string,len(clones))
+	for n, clone := range clones {cdrs[n]=clone.cdr3aa}
+	return cdrs
+}
+
 func main() {
-	S22 := readclones("vdj_.S22_clones.txt")
-	println(S22[0].sample)
-//	S23 := readclones("vdj_.S23_clones.txt")
-//	S24 := readclones("vdj_.S24_clones.txt")
-//	S25 := readclones("vdj_.S25_clones.txt")
-//	S26 := readclones("vdj_.S26_clones.txt")
-//	S27 := readclones("vdj_.S27_clones.txt")
-//	S28 := readclones("vdj_.S28_clones.txt")
-//	S29 := readclones("vdj_.S29_clones.txt")
+	samples_clones := [][]clone {
+		readclones("vdj_.S22_clones.txt"),
+		readclones("vdj_.S23_clones.txt"),
+		readclones("vdj_.S24_clones.txt"),
+		readclones("vdj_.S25_clones.txt"),
+		readclones("vdj_.S26_clones.txt"),
+		readclones("vdj_.S27_clones.txt"),
+		readclones("vdj_.S28_clones.txt"),
+		readclones("vdj_.S29_clones.txt"),
+	}
+	//we read everything in the collection
+	
+	//var common_clones [][] *clone
+	cdrs:=cdrs3aa(samples_clones[0])
+	println(cdrs[0])
+	println(cdrs[1])
+
 }
 
 
