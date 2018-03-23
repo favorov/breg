@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/csv"
-//	"fmt"
+	"fmt"
 	"io"
 	"bufio"
 	"log"
@@ -84,7 +84,7 @@ func cdrs3aa(clones []clone) []string {
 }
 
 //extract cdr keys from map [cdr][]*clone
-func cdr_keys(map_of_clones map[string][]*clone) []string {
+func keys(map_of_clones map[string][]*clone) []string {
 	keys := make([]string, len(map_of_clones))
 	i:=0
 	for key,_ := range map_of_clones {
@@ -94,10 +94,57 @@ func cdr_keys(map_of_clones map[string][]*clone) []string {
 	return keys
 }
 
-func print_clones(clones []clone) []string {
-	cdrs := make([]string,len(clones))
-	for n, clone := range clones {cdrs[n]=clone.cdr3aa}
-	return cdrs
+func print_clones_header(sample_names []string) {
+	print("cdr3aa\t")
+	//for counts
+	for _,sample:= range sample_names {
+		print(sample,"\t")
+	}
+	//for freqs 
+	for _,sample:= range sample_names {
+		print(sample,"\t")
+	}
+	print("\n")
+}
+
+
+//print clones info; first, cdr is printed as key
+func print_clones_map_pair (key string,sample_names []string,clones []*clone){
+	//counts
+	counts:=make([]int64,len(sample_names)) 
+	for n, sample := range sample_names {
+		for _, clone := range clones {
+			if (clone.sample == sample) {
+				counts[n]=counts[n]+clone.count //sum is for future
+			}
+		}
+	}
+	var count_counts int
+	//how mane samples gained to the clone more that one read?
+	for _, count := range counts {
+		if (count>1) {
+			count_counts=count_counts+1
+		}
+	}
+	//id 1, do not print
+	if (count_counts<2) {return}
+
+	print(key,"\t")
+	for _,count := range counts {
+		print(count,"\t")
+	}
+	//freqs
+	for _, sample := range sample_names {
+		var freq float64
+		for _, clone := range clones {
+			if (clone.sample == sample) {
+				freq=freq+clone.freq //sum is for future
+			}
+		}
+		print(fmt.Sprintf("%6f\t",freq))
+	}
+	print("\n")
+	return
 }
 
 func main() {
@@ -118,10 +165,13 @@ func main() {
 		samples_clones = append(samples_clones,readclones(sample_file))
 	}
 
-	//
+	var sample_names []string
 	map_of_clones := make(map[string][]*clone)
 	
 	for _, sample_clones := range samples_clones {
+		//get sample name
+		sample_names=append(sample_names,sample_clones[0].sample) 
+		//and code everything form sample into the map_of_clones
 		cdrs := cdrs3aa(sample_clones)
 		for n,cdr := range cdrs{
 				map_of_clones[cdr]=append(map_of_clones[cdr],&sample_clones[n])
@@ -136,8 +186,10 @@ func main() {
 		}
 	}
 
-	cdrs := cdr_keys(map_of_common_clones)
-	println(cdrs[0],":",map_of_common_clones[cdrs[0]][0].cdr3aa,",",map_of_common_clones[cdrs[0]][0].cdr3aa)
+	print_clones_header(sample_names)
+	for cdr, clones :=range map_of_common_clones {
+		print_clones_map_pair(cdr,sample_names,clones)
+	}
 }
 
 
