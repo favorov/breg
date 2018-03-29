@@ -29,7 +29,13 @@ type clone struct {
 //to know where it comes from
 }
 
-func readclones(filename string) []clone {
+type common_clone struct {
+	cdr3aa_set [] string
+	clones []*clone
+}
+
+
+func readclones_from_file(filename string) []clone {
  	f, err := os.Open(filename)
 	if err != nil {
 			log.Fatalf("Error opening file: %v", err)
@@ -109,34 +115,34 @@ func print_clones_header(sample_names []string) {
 
 
 //print clones info; first, cdr is printed as key
-func print_clones_map_pair (key string,sample_names []string,clones []*clone){
+func print_common_clone (sample_names []string,cclone common_clone){
 	//counts
 	counts:=make([]int64,len(sample_names)) 
 	for n, sample := range sample_names {
-		for _, clone := range clones {
+		for _, clone := range cclone.clones {
 			if (clone.sample == sample) {
 				counts[n]=counts[n]+clone.count //sum is for future
 			}
 		}
 	}
-	var count_counts int
-	//how mane samples gained to the clone more that one read?
+	var count_samples_carrying_clone int
+	//how many samples gained to the clone more that one read?
 	for _, count := range counts {
 		if (count>1) {
-			count_counts=count_counts+1
+			count_samples_carrying_clone=count_samples_carrying_clone+1
 		}
 	}
-	//id 1, do not print
-	if (count_counts<2) {return}
+	//if 1, do not print
+	if (count_samples_carrying_clone<2) {return}
 
-	print(key,"\t")
+	print(cclone.cdr3aa_set[0],"\t")
 	for _,count := range counts {
 		print(count,"\t")
 	}
 	//freqs
 	for _, sample := range sample_names {
 		var freq float64
-		for _, clone := range clones {
+		for _, clone := range cclone.clones {
 			if (clone.sample == sample) {
 				freq=freq+clone.freq //sum is for future
 			}
@@ -162,7 +168,7 @@ func main() {
 	//read all clone from file to clone table [samples][lines]
 	var samples_clones [][]clone 
 	for _, sample_file := range sample_files {
-		samples_clones = append(samples_clones,readclones(sample_file))
+		samples_clones = append(samples_clones,readclones_from_file(sample_file))
 	}
 
 	var sample_names []string
@@ -175,20 +181,25 @@ func main() {
 		cdrs := cdrs3aa(sample_clones)
 		for n,cdr := range cdrs{
 				map_of_clones[cdr]=append(map_of_clones[cdr],&sample_clones[n])
-				//looks simple... but if there is no cdr key, map_of_clones[cdr] return zero []clones, so we append and thus init
+				//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []clones, so we append and thus init
 		}
 	}
 	
-	map_of_common_clones := make(map[string][]*clone)
+	var common_clones []common_clone
+	
 	for cdr, clones :=range map_of_clones {
 		if (len(clones) > 1) {
-			map_of_common_clones[cdr] = clones 
+			var cclone common_clone
+			cclone.cdr3aa_set = append(cclone.cdr3aa_set,cdr)
+			//actually, it is just init, cclone.cdr3aa_set is empty 
+			cclone.clones = clones
+			common_clones = append (common_clones,cclone)
 		}
 	}
 
 	print_clones_header(sample_names)
-	for cdr, clones :=range map_of_common_clones {
-		print_clones_map_pair(cdr,sample_names,clones)
+	for _, cclone :=range common_clones {
+		print_common_clone(sample_names,cclone)
 	}
 }
 
