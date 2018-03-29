@@ -81,14 +81,6 @@ func readclones_from_file(filename string) []clone {
 	return clones
 }
 
-//extract cdr3aa from each clone in clones []clone
-//make a []srtring
-func cdrs3aa(clones []clone) []string {
-	cdrs := make([]string,len(clones))
-	for n, clone := range clones {cdrs[n]=clone.cdr3aa}
-	return cdrs
-}
-
 //extract cdr keys from map [cdr][]*clone
 func keys(map_of_clones map[string][]*clone) []string {
 	keys := make([]string, len(map_of_clones))
@@ -177,10 +169,9 @@ func main() {
 	for _, sample_clones := range samples_clones {
 		//get sample name
 		sample_names=append(sample_names,sample_clones[0].sample) 
-		//and code everything form sample into the map_of_clones
-		cdrs := cdrs3aa(sample_clones)
-		for n,cdr := range cdrs{
-				map_of_clones[cdr]=append(map_of_clones[cdr],&sample_clones[n])
+		//and refer all the cones from the sample into the map_of_clones
+		for n, clone := range sample_clones{
+				map_of_clones[clone.cdr3aa]=append(map_of_clones[clone.cdr3aa],&sample_clones[n])
 				//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []clones, so we append and thus init
 		}
 	}
