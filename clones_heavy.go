@@ -34,6 +34,19 @@ type common_clone struct {
 	clones []*clone
 }
 
+func are_clones_common (c1 *clone, c2 *clone) bool {
+//it will be more complicated later
+	eq := false
+	eq = (c1.cdr3aa == c2.cdr3aa)
+	return eq
+}
+
+func are_clones_common (cs []*clone, c2 *clone) bool {
+	for _,c1 := range cs {
+		if (are_clones_common(c1,c2)) {return true}
+	}
+	return false
+}
 
 func readclones_from_file(filename string) []clone {
  	f, err := os.Open(filename)
