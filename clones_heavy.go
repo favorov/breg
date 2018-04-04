@@ -48,21 +48,15 @@ type common_clone struct {
 //	return false
 //}
 
-func readclones_from_file(filename string) []clone {
+//read from file, sample name is sample_name,
+//read appenfding to clones
+func readclones_from_file(filename string, sample_name string, clones *[]clone) {
  	f, err := os.Open(filename)
 	if err != nil {
 			log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
 
-	regstr:="S[0-9]*"
-	sampleregexp,reerr := regexp.Compile(regstr)
-	if reerr != nil {
-			log.Fatalf("Error compiling regexp %v: %v",regstr,reerr)
-	}
-	sample:=sampleregexp.FindString(filename)
-
-	var clones []clone
 
 	rdr := csv.NewReader(bufio.NewReader(f))
 	rdr.Comma = '\t'
@@ -88,10 +82,9 @@ func readclones_from_file(filename string) []clone {
 		record_clone.DStart, _ = strconv.Atoi(record[8])
 		record_clone.DEnd, _ = strconv.Atoi(record[9])
 		record_clone.JStart, _ = strconv.Atoi(record[10])
-		record_clone.sample = sample
-		clones = append(clones, record_clone)
+		record_clone.sample = sample_name
+		*clones = append(*clones, record_clone)
 	}
-	return clones
 }
 
 //extract cdr keys from map [cdr][]*clone
@@ -138,7 +131,9 @@ func print_common_clone (sample_names []string,cclone common_clone){
 		}
 	}
 	//if 1, do not print
+	//println("qoo ",count_samples_carrying_clone)
 	if (count_samples_carrying_clone<2) {return}
+
 
 	print(cclone.cdr3aa_set[0],"\t")
 	for _,count := range counts {
@@ -171,22 +166,29 @@ func main() {
 	}
 
 	//read all clone from file to clone table [samples][lines]
-	var samples_clones [][]clone 
+	var all_clones []clone
+	var sample_names []string
+
+	//prepare to parse "S22", "S23", etc in strings
+	sample_name_regstr:="S[0-9]*"
+	sample_regexp,reerr := regexp.Compile(sample_name_regstr)
+	if reerr != nil {
+			log.Fatalf("Error compiling regexp %v: %v",sample_name_regstr,reerr)
+	}
+	
+	//read clones from files
 	for _, sample_file := range sample_files {
-		samples_clones = append(samples_clones,readclones_from_file(sample_file))
+		sample_name:=sample_regexp.FindString(sample_file)
+		sample_names=append(sample_names,sample_name) 
+		readclones_from_file(sample_file,sample_name,&all_clones)
 	}
 
-	var sample_names []string
+	//organise their &  to map
 	map_of_clones := make(map[string][]*clone)
-	
-	for _, sample_clones := range samples_clones {
-		//get sample name
-		sample_names=append(sample_names,sample_clones[0].sample) 
+	for n, the_clone := range all_clones {
 		//and refer all the cones from the sample into the map_of_clones
-		for n, clone := range sample_clones{
-				map_of_clones[clone.cdr3aa]=append(map_of_clones[clone.cdr3aa],&sample_clones[n])
-				//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []clones, so we append and thus init
-		}
+		map_of_clones[the_clone.cdr3aa]=append(map_of_clones[the_clone.cdr3aa],&(all_clones[n]))
+		//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []*clone, so we append and thus init
 	}
 	
 	var common_clones []common_clone
