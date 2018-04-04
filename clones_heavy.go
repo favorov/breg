@@ -32,6 +32,7 @@ type clone struct {
 type common_clone struct {
 	cdr3aa_set [] string
 	clones []*clone
+	count int64
 }
 
 //func are_clones_common (c1 *clone, c2 *clone) bool {
@@ -114,37 +115,25 @@ func print_clones_header(sample_names []string) {
 
 //print clones info; first, cdr is printed as key
 func print_common_clone (sample_names []string,cclone common_clone){
+	
+	print(cclone.cdr3aa_set[0],"\t")
 	//counts
-	counts:=make([]int64,len(sample_names)) 
-	for n, sample := range sample_names {
+	for _, sample := range sample_names {
+		var count int64
 		for _, clone := range cclone.clones {
 			if (clone.sample == sample) {
-				counts[n]=counts[n]+clone.count //sum is for future
+				count += clone.count //sum is for future
 			}
-		}
-	}
-	var count_samples_carrying_clone int
-	//how many samples gained to the clone more that one read?
-	for _, count := range counts {
-		if (count>1) {
-			count_samples_carrying_clone=count_samples_carrying_clone+1
-		}
-	}
-	//if 1, do not print
-	//println("qoo ",count_samples_carrying_clone)
-	if (count_samples_carrying_clone<2) {return}
-
-
-	print(cclone.cdr3aa_set[0],"\t")
-	for _,count := range counts {
 		print(count,"\t")
+		}
 	}
+
 	//freqs
 	for _, sample := range sample_names {
 		var freq float64
 		for _, clone := range cclone.clones {
 			if (clone.sample == sample) {
-				freq=freq+clone.freq //sum is for future
+				freq += clone.freq //sum is for future
 			}
 		}
 		print(fmt.Sprintf("%6f\t",freq))
@@ -194,12 +183,15 @@ func main() {
 	var common_clones []common_clone
 	
 	for cdr, clones :=range map_of_clones {
-		if (len(clones) > 1) {
-			var cclone common_clone
-			cclone.cdr3aa_set = append(cclone.cdr3aa_set,cdr)
+		var counter int64
+		for _, clone := range clones {counter+=clone.count}
+		if (counter >= 500) {
+			var new_cclone common_clone
+			new_cclone.cdr3aa_set = append(new_cclone.cdr3aa_set,cdr)
 			//actually, it is just init, cclone.cdr3aa_set is empty 
-			cclone.clones = clones
-			common_clones = append (common_clones,cclone)
+			new_cclone.clones = clones
+			new_cclone.count=counter
+			common_clones = append (common_clones,new_cclone)
 		}
 	}
 
