@@ -52,7 +52,7 @@ type common_clone struct {
 
 //read from file, sample name is sample_name,
 //read appenfding to clones
-func readclones_from_file(filename string, sample_name string, clones *list) {
+func readclones_from_file(filename string, sample_name string, clones *list.List) {
  	f, err := os.Open(filename)
 	if err != nil {
 			log.Fatalf("Error opening file: %v", err)
@@ -85,7 +85,7 @@ func readclones_from_file(filename string, sample_name string, clones *list) {
 		record_clone.DEnd, _ = strconv.Atoi(record[9])
 		record_clone.JStart, _ = strconv.Atoi(record[10])
 		record_clone.sample = sample_name
-		clones.PushBack(record_clone)
+		clones.PushBack(&record_clone)
 	}
 }
 
@@ -159,22 +159,16 @@ func main() {
 	for _, sample_file := range sample_files {
 		sample_name:=sample_regexp.FindString(sample_file)
 		sample_names=append(sample_names,sample_name) 
-		readclones_from_file(sample_file,sample_name,&all_clones)
+		readclones_from_file(sample_file,sample_name,all_clones)
 	}
 
 	//organise their &  to map
 	map_of_clones := make(map[string][]*clone)
-	for the_clone := all_clones.Front(); the_clone != nil; the_clone = all_clones.Next() {
+	for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
 		//and refer all the clones from the all_clones list into the map_of_clones
-		map_of_clones[the_clone.cdr3aa]=append(map_of_clones[the_clone.cdr3aa],the_clone.Value)
+		map_of_clones[the_clone.Value.(*clone).cdr3aa]=append(map_of_clones[the_clone.Value.(*clone).cdr3aa],the_clone.Value.(*clone))
 		//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []*clone, so we append and thus init
 	}
-	//was:
-	//for n, the_clone := range all_clones {
-		//and refer all the cones from the sample into the map_of_clones
-		//map_of_clones[the_clone.cdr3aa]=append(map_of_clones[the_clone.cdr3aa],&(all_clones[n]))
-		//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []*clone, so we append and thus init
-	//}
 	
 	var common_clones []common_clone
 	
