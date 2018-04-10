@@ -30,9 +30,9 @@ type clone struct {
 //to know where it comes from
 }
 
-//test whether c1 and c2 are actually the same
+//test whether *c1 and *c2 goes to the same common clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
-func ifeqcl(clone c1, clone c2) bool {
+func ifeqcl(c1 *clone, c2 *clone) bool {
 	res:=(c1.cdr3aa==c2.cdr3aa)
 	return res
 }
@@ -58,7 +58,7 @@ type common_clone struct {
 //}
 
 //read from file, sample name is sample_name,
-//read appenfding to clones
+//read appending to clones; it is a list of *clone
 func readclones_from_file(filename string, sample_name string, clones *list.List) {
  	f, err := os.Open(filename)
 	if err != nil {
