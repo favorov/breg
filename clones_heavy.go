@@ -192,7 +192,7 @@ func main() {
 		if (found) { break }
 		//if we are here not by break - add new combined clone to the clonoteque and put the_clone there
 		clonoteque.PushBack(list.New())
-		clonoteque.Back().Value.(*list.List).PushBack(the_clone)
+		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
 	}
 
 
