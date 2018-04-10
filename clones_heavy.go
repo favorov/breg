@@ -152,7 +152,7 @@ func main() {
 	}
 
 	//read all clone from file to clone table [samples][lines]
-	all_clones:=list.New()
+	all_clones := list.New()
 	var sample_names []string
 
 	//prepare to parse "S22", "S23", etc in strings
@@ -171,14 +171,29 @@ func main() {
 
 	//organise them to combined_clones list<list<*clone>> ; we believe that ifeqcl symmetric
 	//so, we take *clone one-by-one and present them to all already in combined_clones
-	//combined_clones:=list.New()
+	clonoteque:=list.New()
 
-	//for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
-	//	for the_combined_clone := combined_clones.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
-	//		for inner_clone := the_combined_clone.Front(); inner_clone != nil; inner_clone = inner_clone.Next() {
-	//		}
-	//	}
-	//}
+	for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
+		var found bool
+		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+			found = false
+			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+				//if the_clone is in common with a clone inde the the_combined_clone list, it also goes to the_combined_clone
+				if (ifeqcl(the_inner_clone.Value.(*clone),the_clone.Value.(*clone))) {
+					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
+					found = true
+					break
+				}
+			}
+			//if we are here, and we added the_clone somewhere - break
+			if (found) { break }
+			// else, we go on to the next combined clone
+		}
+		if (found) { break }
+		//if we are here not by break - add new combined clone to the clonoteque and put the_clone there
+		clonoteque.PushBack(list.New())
+		clonoteque.Back().Value.(*list.List).PushBack(the_clone)
+	}
 
 
 	//organise their &  to map
