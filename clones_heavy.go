@@ -30,6 +30,13 @@ type clone struct {
 //to know where it comes from
 }
 
+//test whether c1 and c2 are actually the same
+//the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
+func ifeqcl(clone c1, clone c2) bool {
+	res:=(c1.cdr3aa==c2.cdr3aa)
+	return res
+}
+
 type common_clone struct {
 	cdr3aa_set [] string
 	clones []*clone
@@ -161,6 +168,18 @@ func main() {
 		sample_names=append(sample_names,sample_name) 
 		readclones_from_file(sample_file,sample_name,all_clones)
 	}
+
+	//organise them to combined_clones list<list<*clone>> ; we believe that ifeqcl symmetric
+	//so, we take *clone one-by-one and present them to all already in combined_clones
+	//combined_clones:=list.New()
+
+	//for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
+	//	for the_combined_clone := combined_clones.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+	//		for inner_clone := the_combined_clone.Front(); inner_clone != nil; inner_clone = inner_clone.Next() {
+	//		}
+	//	}
+	//}
+
 
 	//organise their &  to map
 	map_of_clones := make(map[string][]*clone)
