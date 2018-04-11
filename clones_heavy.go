@@ -43,22 +43,9 @@ type common_clone struct {
 	count int64
 }
 
-//func are_clones_common (c1 *clone, c2 *clone) bool {
-//it will be more complicated later
-//	eq := false
-//	eq = (c1.cdr3aa == c2.cdr3aa)
-//	return eq
-//}
-
-//func are_clones_common (cs []*clone, c2 *clone) bool {
-//	for _,c1 := range cs {
-//		if (are_clones_common(c1,c2)) {return true}
-//	}
-//	return false
-//}
 
 //read from file, sample name is sample_name,
-//read appending to clones; it is a list of *clone
+//read appending to clones; it is a list.List of *clone
 func readclones_from_file(filename string, sample_name string, clones *list.List) {
  	f, err := os.Open(filename)
 	if err != nil {
@@ -98,22 +85,22 @@ func readclones_from_file(filename string, sample_name string, clones *list.List
 
 
 func print_clones_header(sample_names []string) {
-	print("cdr3aa\t")
+	fmt.Print("cdr3aa\t")
 	//for counts
 	for _,sample:= range sample_names {
-		print(sample,"\t")
+		fmt.Print(sample,"\t")
 	}
 	//for freqs 
 	for _,sample:= range sample_names {
-		print(sample,"\t")
+		fmt.Print(sample,"\t")
 	}
-	print("\n")
+	fmt.Println()
 }
 
 
 //print clones info; first, cdr is printed as key
 func print_common_clone (sample_names []string,cclone common_clone){
-	print(cclone.cdr3aa_set[0],"\t")
+	fmt.Print(cclone.cdr3aa_set[0],"\t")
 	//counts
 	for _, sample := range sample_names {
 		var count int64
@@ -122,7 +109,7 @@ func print_common_clone (sample_names []string,cclone common_clone){
 				count += clone.count //sum is for future
 			}
 		}
-		print(count,"\t")
+		fmt.Print(count,"\t")
 	}
 
 	//freqs
@@ -133,9 +120,9 @@ func print_common_clone (sample_names []string,cclone common_clone){
 				freq += clone.freq //sum is for future
 			}
 		}
-		print(fmt.Sprintf("%6f\t",freq))
+		fmt.Printf("%6f\t",freq)
 	}
-	print("\n")
+	fmt.Println()
 	return
 }
 
@@ -169,7 +156,7 @@ func main() {
 		readclones_from_file(sample_file,sample_name,all_clones)
 	}
 
-	//organise them to combined_clones list<list<*clone>> ; we believe that ifeqcl symmetric
+	//organise them to combined_clones list.List<list.List<*clone>> ; we believe that ifeqcl symmetric
 	//so, we take *clone one-by-one and present them to all already in combined_clones
 	clonoteque:=list.New()
 
@@ -178,7 +165,7 @@ func main() {
 		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 			found = false
 			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-				//if the_clone is in common with a clone inde the the_combined_clone list, it also goes to the_combined_clone
+				//if the_clone is in common with a clone from the the_combined_clone list.List, the_clone also goes to the_combined_clone
 				if (ifeqcl(the_inner_clone.Value.(*clone),the_clone.Value.(*clone))) {
 					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
 					found = true
