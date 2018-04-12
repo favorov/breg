@@ -37,12 +37,6 @@ func ifeqcl(c1 *clone, c2 *clone) bool {
 	return res
 }
 
-type common_clone struct {
-	cdr3aa_set [] string
-	clones []*clone
-	count int64
-}
-
 
 //read from file, sample name is sample_name,
 //read appending to clones; it is a list.List of *clone
@@ -99,29 +93,29 @@ func print_clones_header(sample_names []string) {
 
 
 //print clones info; first, cdr is printed as key
-func print_common_clone (sample_names []string,cclone common_clone){
-	fmt.Print(cclone.cdr3aa_set[0],"\t")
+func print_common_clone (sample_names []string, common_clone *list.List){
+	fmt.Print(common_clone.Front().Value.(*clone).cdr3aa,"\t")
 	//counts
-	for _, sample := range sample_names {
-		var count int64
-		for _, clone := range cclone.clones {
-			if (clone.sample == sample) {
-				count += clone.count //sum is for future
-			}
-		}
-		fmt.Print(count,"\t")
-	}
+	//for _, sample := range sample_names {
+	//	var count int64
+	//	for _, clone := range cclone.clones {
+	//		if (clone.sample == sample) {
+	//			count += clone.count //sum is for future
+	//		}
+	//	}
+	//	fmt.Print(count,"\t")
+	//}
 
 	//freqs
-	for _, sample := range sample_names {
-		var freq float64
-		for _, clone := range cclone.clones {
-			if (clone.sample == sample) {
-				freq += clone.freq //sum is for future
-			}
-		}
-		fmt.Printf("%6f\t",freq)
-	}
+	//for _, sample := range sample_names {
+	//	var freq float64
+	//	for _, clone := range cclone.clones {
+	//		if (clone.sample == sample) {
+	//			freq += clone.freq //sum is for future
+	//		}
+	//	}
+	//	fmt.Printf("%6f\t",freq)
+	//}
 	fmt.Println()
 	return
 }
@@ -156,18 +150,18 @@ func main() {
 		readclones_from_file(sample_file,sample_name,all_clones)
 	}
 
-	//organise them to combined_clones list.List<list.List<*clone>> ; we believe that ifeqcl symmetric
-	//so, we take *clone one-by-one and present them to all already in combined_clones
+	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
+	//so, we take *clone one-by-one and present them to all clones already in the common clones
 	clonoteque:=list.New()
 
 	for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
 		var found bool
-		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+		for the_common_clone := clonoteque.Front(); the_common_clone != nil; the_common_clone = the_common_clone.Next() {
 			found = false
-			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-				//if the_clone is in common with a clone from the the_combined_clone list.List, the_clone also goes to the_combined_clone
+			for the_inner_clone := the_common_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+				//if the_clone is in common with a clone from the the_common_clone list.List, the_clone also goes to the_common_clone
 				if (ifeqcl(the_inner_clone.Value.(*clone),the_clone.Value.(*clone))) {
-					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
+					the_common_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
 					found = true
 					break
 				}
@@ -176,38 +170,20 @@ func main() {
 			if (found) { break }
 			// else, we go on to the next combined clone
 		}
-		if (found) { break }
+		if (found) { continue }
 		//if we are here not by break - add new combined clone to the clonoteque and put the_clone there
 		clonoteque.PushBack(list.New())
 		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
 	}
 
-
-	//organise their &  to map
-	map_of_clones := make(map[string][]*clone)
-	for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
-		//and refer all the clones from the all_clones list into the map_of_clones
-		map_of_clones[the_clone.Value.(*clone).cdr3aa]=append(map_of_clones[the_clone.Value.(*clone).cdr3aa],the_clone.Value.(*clone))
-		//looks simple... but if there is no cdr key in the map, map_of_clones[cdr] return zero []*clone, so we append and thus init
-	}
-	
-	var common_clones []common_clone
-	
-	for cdr, clones :=range map_of_clones {
-		var counter int64
-		for _, clone := range clones {counter+=clone.count}
-		var new_cclone common_clone
-		new_cclone.cdr3aa_set = append(new_cclone.cdr3aa_set,cdr)
-		//actually, it is just init, cclone.cdr3aa_set is empty 
-		new_cclone.clones = clones
-		new_cclone.count=counter
-		common_clones = append (common_clones,new_cclone)
-	}
-
 	print_clones_header(sample_names)
-	for _, cclone :=range common_clones {
-		if (cclone.count >= 500) {
-			print_common_clone(sample_names,cclone)
+	for the_common_clone := clonoteque.Front(); the_common_clone != nil; the_common_clone = the_common_clone.Next() {
+		var count int64
+		for the_inner_clone := the_common_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+			count+=the_inner_clone.Value.(*clone).count
+		}
+		if (count >= 500) {
+			print_common_clone(sample_names,the_common_clone.Value.(*list.List))
 		}
 	}
 }
