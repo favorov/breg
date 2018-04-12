@@ -96,26 +96,27 @@ func print_clones_header(sample_names []string) {
 func print_common_clone (sample_names []string, common_clone *list.List){
 	fmt.Print(common_clone.Front().Value.(*clone).cdr3aa,"\t")
 	//counts
-	//for _, sample := range sample_names {
-	//	var count int64
-	//	for _, clone := range cclone.clones {
-	//		if (clone.sample == sample) {
-	//			count += clone.count //sum is for future
-	//		}
-	//	}
-	//	fmt.Print(count,"\t")
-	//}
+
+	for _, sample := range sample_names {
+		var count int64
+		for the_clone := common_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
+			if (the_clone.Value.(*clone).sample == sample) {
+				count += the_clone.Value.(*clone).count //sum is for future
+			}
+		}
+		fmt.Print(count,"\t")
+	}
 
 	//freqs
-	//for _, sample := range sample_names {
-	//	var freq float64
-	//	for _, clone := range cclone.clones {
-	//		if (clone.sample == sample) {
-	//			freq += clone.freq //sum is for future
-	//		}
-	//	}
-	//	fmt.Printf("%6f\t",freq)
-	//}
+	for _, sample := range sample_names {
+		var freq float64
+		for the_clone := common_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
+			if (the_clone.Value.(*clone).sample == sample) {
+				freq += the_clone.Value.(*clone).freq //sum is for future
+			}
+		}
+		fmt.Printf("%6f\t",freq)
+	}
 	fmt.Println()
 	return
 }
