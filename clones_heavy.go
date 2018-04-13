@@ -94,29 +94,30 @@ func print_clones_header(sample_names []string) {
 
 //print clones info; first, cdr is printed as key
 func print_common_clone (sample_names []string, common_clone *list.List){
-	fmt.Print(common_clone.Front().Value.(*clone).cdr3aa,"\t")
+	//it is to know the sample number in sample_names by the name
+	sample_by_name := make(map[string]int)
+	for n, name := range sample_names {sample_by_name[name] = n}
+	
+	//prepare counters
+	counts:=make([] int64,len(sample_names))
+	freqs:=make([] float64,len(sample_names))
+	
+
 	//counts
-
-	for _, sample := range sample_names {
-		var count int64
-		for the_clone := common_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
-			if (the_clone.Value.(*clone).sample == sample) {
-				count += the_clone.Value.(*clone).count //sum is for future
-			}
-		}
-		fmt.Print(count,"\t")
+	//the clone here is the list element with *clone as Value
+	for the_clone := common_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
+		clone_ptr := the_clone.Value.(*clone)
+		counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count 
+		freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
 	}
-
-	//freqs
-	for _, sample := range sample_names {
-		var freq float64
-		for the_clone := common_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
-			if (the_clone.Value.(*clone).sample == sample) {
-				freq += the_clone.Value.(*clone).freq //sum is for future
-			}
-		}
-		fmt.Printf("%6f\t",freq)
-	}
+	
+	//print - names
+	fmt.Print(common_clone.Front().Value.(*clone).cdr3aa,"\t")
+	//print - counts
+	for n, _ := range sample_names { fmt.Print(counts[n],"\t") }
+	//print - freqs
+	for n, _ := range sample_names { fmt.Printf("%6f\t",freqs[n]) }
+	
 	fmt.Println()
 	return
 }
