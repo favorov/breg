@@ -13,6 +13,10 @@ import (
 	//	"strings"
 )
 
+const support_coverage = 500
+const max_terminal_del = 2
+const max_mismatches_no = 2
+
 type clone struct {
 	cdr3aa string
 	cdr3nt string
@@ -34,8 +38,31 @@ type clone struct {
 //test whether *c1 and *c2 goes to the same common clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
 func ifeqcl(c1 *clone, c2 *clone) bool {
-	res := (c1.cdr3aa == c2.cdr3aa)
-	return res
+	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_no,max_terminal_del) 
+}
+
+func string_nonstrict_match (s1 *string, s2 *string, maxmismatch, maxtermdel int) bool {
+	if (len(*s1)!=len(*s2)) {
+		return false
+	}
+	return string_eq_len_nonstrict_match(s1,s2,maxtermdel) 
+}
+
+func string_eq_len_nonstrict_match (s1 *string, s2 *string, maxmismatch int) bool {
+	if (len(*s1)!=len(*s2)) {
+		log.Println("string_eq_len_nonstrict_match get unequal dting length\n")
+		return false
+	}
+	mismatches := 0
+	for i := 0; i < len(*s1); i++ {	
+		if ((*s1)[i] != (*s2)[i]) {
+			mismatches++
+			if (mismatches>maxmismatch) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 //read from file, sample name is sample_name,
@@ -201,7 +228,7 @@ func main() {
 		for the_inner_clone := the_common_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
 			count += the_inner_clone.Value.(*clone).count
 		}
-		if count >= 500 {
+		if count >= support_coverage  {
 			print_common_clone(sample_names, the_common_clone.Value.(*list.List))
 		}
 	}
