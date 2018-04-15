@@ -10,12 +10,13 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"math"
 	//	"strings"
 )
 
 const support_coverage = 500
 const max_terminal_del = 2
-const max_mismatches_no = 2
+const max_mismatches_share = 0.1
 
 type clone struct {
 	cdr3aa string
@@ -38,14 +39,22 @@ type clone struct {
 //test whether *c1 and *c2 goes to the same common clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
 func ifeqcl(c1 *clone, c2 *clone) bool {
-	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_no,max_terminal_del) 
+	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_share,max_terminal_del) 
 }
 
-func string_nonstrict_match (s1 *string, s2 *string, maxmismatch, maxtermdel int) bool {
-	if (len(*s1)!=len(*s2)) {
-		return false
+func string_nonstrict_match (s1 *string, s2 *string, maxmismatchshare float64, maxtermdel int) bool {
+	if (len(*s1)>len(*s2)) {
+		s3:=s1
+		s1=s2
+		s2=s3
 	}
-	return string_eq_len_nonstrict_match(s1,s2,maxtermdel) 
+	l1:=len(*s1)
+	l2:=len(*s2)
+	//l2>=l1
+	if(l2-l1 > 2*maxtermdel) {return false}
+	if(l2!=l1) {return false} //stump
+	max_match_no:=(int)(math.Max(1.,(maxmismatchshare*(float64)(l1))))
+	return string_eq_len_nonstrict_match(s1,s2,max_match_no) 
 }
 
 func string_eq_len_nonstrict_match (s1 *string, s2 *string, maxmismatch int) bool {
