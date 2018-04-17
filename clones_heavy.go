@@ -42,26 +42,32 @@ func ifeqcl(c1 *clone, c2 *clone) bool {
 	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_share,max_terminal_del) 
 }
 
+//shift the start, test the match
 func string_nonstrict_match (s1 *string, s2 *string, maxmismatchshare float64, maxtermdel int) bool {
+	l1:=len(*s1)
+	l2:=len(*s2)
+	if ( l2-l1 > 2*maxtermdel || l1-l2 > 2*maxtermdel) {return false}
+	max_mismatch_no:=int(math.Max(1.,(maxmismatchshare*float64(l1))))
+	for shift:=0; shift <= maxtermdel; shift++ {
+		shiftedstring:=(*s2)[shift:]
+		if (string_nonstrict_match_from_start(s1,&shiftedstring,max_mismatch_no,maxtermdel)) {return true}
+	}
+	for shift:=1; shift <= maxtermdel; shift++ {
+		shiftedstring:=(*s1)[shift:]
+		if (string_nonstrict_match_from_start(&shiftedstring,s2,max_mismatch_no,maxtermdel)) {return true}
+	}
+	return false
+}
+
+func string_nonstrict_match_from_start (s1 *string, s2 *string, maxmismatch, maxlendiff int) bool {
+	//the strings have common start, and they can differ in lenght no more than maxlendiff
 	if (len(*s1)>len(*s2)) {
 		s3:=s1
 		s1=s2
 		s2=s3
 	}
-	l1:=len(*s1)
-	l2:=len(*s2)
-	//l2>=l1
-	if(l2-l1 > 2*maxtermdel) {return false}
-	if(l2!=l1) {return false} //stump
-	max_match_no:=(int)(math.Max(1.,(maxmismatchshare*(float64)(l1))))
-	return string_eq_len_nonstrict_match(s1,s2,max_match_no) 
-}
-
-func string_eq_len_nonstrict_match (s1 *string, s2 *string, maxmismatch int) bool {
-	if (len(*s1)!=len(*s2)) {
-		log.Println("string_eq_len_nonstrict_match get unequal dting length\n")
-		return false
-	}
+	//s2 now longer or eq
+	if (len(*s2)-len(*s1) > maxlendiff) { return false }
 	mismatches := 0
 	for i := 0; i < len(*s1); i++ {	
 		if ((*s1)[i] != (*s2)[i]) {
