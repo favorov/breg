@@ -10,13 +10,13 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"math"
+	// "math"
 	//	"strings"
 )
 
-const support_coverage = 500
-const max_terminal_del = 2
-const max_mismatches_share = 0.1
+const support_coverage = 1000 //500
+const max_terminal_del = 0 //2
+const max_mismatches_share = 0 //0.1 
 
 type clone struct {
 	cdr3aa string
@@ -47,7 +47,7 @@ func string_nonstrict_match (s1 *string, s2 *string, maxmismatchshare float64, m
 	l1:=len(*s1)
 	l2:=len(*s2)
 	if ( l2-l1 > 2*maxtermdel || l1-l2 > 2*maxtermdel) {return false}
-	max_mismatch_no:=int(math.Max(1.,(maxmismatchshare*float64(l1))))
+	max_mismatch_no:=int(maxmismatchshare*float64(l1))
 	for shift:=0; shift <= maxtermdel; shift++ {
 		shiftedstring:=(*s2)[shift:]
 		if (string_nonstrict_match_from_start(s1,&shiftedstring,max_mismatch_no,maxtermdel)) {return true}
@@ -128,7 +128,31 @@ func print_clones_header(sample_names []string) {
 	for _, sample := range sample_names {
 		fmt.Print(sample, "\t")
 	}
-	fmt.Println()
+	fmt.Println("v\td\tj")
+}
+
+
+//form a string from alleles map
+func string_from_allele_map(allele_map map[string][]int64, sample_names []string) string {
+	out:=""
+	first_allele := true
+	for allele,counters:=range allele_map {
+		if !first_allele {
+			out+=fmt.Sprint("; ")
+		}
+		first_allele = false
+		out+=fmt.Sprint(allele,": ")
+		first_sample := true
+		for n,name:=range sample_names {
+			if (0 == counters[n]) {continue}
+			if !first_sample {
+				out+=fmt.Sprint(", ")
+			}
+			first_sample = false
+			out+=fmt.Sprint(counters[n]," in ",name)
+		}
+	}
+	return out
 }
 
 //print clones info; first, cdr is printed as key
@@ -143,6 +167,9 @@ func print_common_clone(sample_names []string, common_clone *list.List) {
 	cdrs := make(map[string]bool)
 	counts := make([]int64, len(sample_names))
 	freqs := make([]float64, len(sample_names))
+	v_alleles := make(map[string][]int64) //map of allele->counters per sample
+	d_alleles := make(map[string][]int64) //map of allele->counters per sample
+	j_alleles := make(map[string][]int64) //map of allele->counters per sample
 
 	//counts
 	//the clone here is the list element with *clone as Value
@@ -151,17 +178,23 @@ func print_common_clone(sample_names []string, common_clone *list.List) {
 		cdrs[clone_ptr.cdr3aa] = true
 		counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
 		freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
+		if (0 == len(v_alleles[clone_ptr.v])) { v_alleles[clone_ptr.v]=make([]int64,len(sample_names)) }
+		v_alleles[clone_ptr.v][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		if (0 == len(d_alleles[clone_ptr.d])) { d_alleles[clone_ptr.d]=make([]int64,len(sample_names)) }
+		d_alleles[clone_ptr.d][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		if (0 == len(j_alleles[clone_ptr.j])) { j_alleles[clone_ptr.j]=make([]int64,len(sample_names)) }
+		j_alleles[clone_ptr.j][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
 	}
 
 	//print - names
-	firstcdr := true
+	first_cdr := true
 	//fmt.Print(common_clone.Front().Value.(*clone).cdr3aa, "\t")
 	for cdr, _ := range cdrs {
-		if !firstcdr {
+		if !first_cdr {
 			fmt.Print(", ")
 		}
+		first_cdr = false
 		fmt.Print(cdr)
-		firstcdr = false
 	}
 	fmt.Print("\t")
 	//print - counts
@@ -172,6 +205,10 @@ func print_common_clone(sample_names []string, common_clone *list.List) {
 	for n, _ := range sample_names {
 		fmt.Printf("%6f\t", freqs[n])
 	}
+
+	fmt.Print(string_from_allele_map(v_alleles,sample_names),"\t")
+	fmt.Print(string_from_allele_map(d_alleles,sample_names),"\t")
+	fmt.Print(string_from_allele_map(j_alleles,sample_names))
 
 	fmt.Println()
 	return
