@@ -14,9 +14,9 @@ import (
 	//	"strings"
 )
 
-const support_coverage = 1000 //500
-const max_terminal_del = 0 //2
-const max_mismatches_share = 0 //0.1 
+const support_coverage = 500
+const max_terminal_del = 1 
+const max_mismatches_share = 0.05 
 
 type clone struct {
 	cdr3aa string
@@ -178,11 +178,17 @@ func print_common_clone(sample_names []string, common_clone *list.List) {
 		cdrs[clone_ptr.cdr3aa] = true
 		counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
 		freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
+		//init if it is the first mention
 		if (0 == len(v_alleles[clone_ptr.v])) { v_alleles[clone_ptr.v]=make([]int64,len(sample_names)) }
+		//add to counter
 		v_alleles[clone_ptr.v][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		//init if it is the first mention
 		if (0 == len(d_alleles[clone_ptr.d])) { d_alleles[clone_ptr.d]=make([]int64,len(sample_names)) }
+		//add to counter
 		d_alleles[clone_ptr.d][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		//init if it is the first mention
 		if (0 == len(j_alleles[clone_ptr.j])) { j_alleles[clone_ptr.j]=make([]int64,len(sample_names)) }
+		//add to counter
 		j_alleles[clone_ptr.j][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
 	}
 
