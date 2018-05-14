@@ -303,7 +303,13 @@ func main() {
 
 	if write_heavy {
 		heavy_clones_file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,".tsv")
-		println(heavy_clones_file_name)
+		outf, err := os.Create(heavy_clones_file_name)
+		if err != nil {
+        panic(err)
+    }
+		defer outf.Close()
+		old_stdout := os.Stdout
+		os.Stdout=outf
 		print_clones_header(sample_names)
 		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 			var count int64
@@ -314,5 +320,6 @@ func main() {
 				print_combined_clone(sample_names, the_combined_clone.Value.(*list.List))
 			}
 		}
+		os.Stdout=old_stdout
 	}
 }
