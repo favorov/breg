@@ -14,7 +14,12 @@ import (
 	//	"strings"
 )
 
-const support_coverage = 500
+//output
+const write_heavy = true
+const support_coverage_for_heavy = 500
+const heavy_prefix = "heavy_combined_clones"
+
+//this is for combibnig clones
 const max_terminal_del = 1 
 const max_mismatches_share = 0.05 
 
@@ -145,15 +150,15 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 	first_allele := true
 	for allele,counters:=range allele_map {
 		if !first_allele {
-			out+=fmt.Sprint("; ")
+			out+="; "
 		}
 		first_allele = false
-		out+=fmt.Sprint(allele,": ")
+		out=out+allele+": "
 		first_sample := true
 		for n,name:=range sample_names {
 			if (0 == counters[n]) {continue}
 			if !first_sample {
-				out+=fmt.Sprint(", ")
+				out+=", "
 			}
 			first_sample = false
 			out+=fmt.Sprint(counters[n]," in ",name)
@@ -287,14 +292,18 @@ func main() {
 		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
 	}
 
-	print_clones_header(sample_names)
-	for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
-		var count int64
-		for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-			count += the_inner_clone.Value.(*clone).count
-		}
-		if count >= support_coverage  {
-			print_combined_clone(sample_names, the_combined_clone.Value.(*list.List))
+	if(write_heavy) {
+		//heavy_clones_file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,".tsv")
+		//println(heavy_clones_file_name)
+		print_clones_header(sample_names)
+		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+			var count int64
+			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+				count += the_inner_clone.Value.(*clone).count
+			}
+			if count >= support_coverage_for_heavy  {
+				print_combined_clone(sample_names, the_combined_clone.Value.(*list.List))
+			}
 		}
 	}
 }
