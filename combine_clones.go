@@ -293,8 +293,8 @@ func main() {
 	}
 
 	if(write_heavy) {
-		//heavy_clones_file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,".tsv")
-		//println(heavy_clones_file_name)
+		heavy_clones_file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,".tsv")
+		println(heavy_clones_file_name)
 		print_clones_header(sample_names)
 		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 			var count int64
