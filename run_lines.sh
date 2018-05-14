@@ -1,6 +1,5 @@
 #mixcr align -c IGH -r S22.aln_report.txt Lom1_S22_L001_R1_001.fastq.gz Lom1_S22_L001_R2_001.fastq.gz S22.vdjca
 #mixcr align -c IGH -r S23.aln_report.txt Lom2_S23_L001_R1_001.fastq.gz Lom2_S23_L001_R2_001.fastq.gz S23.vdjca
-
 #mixcr align -c IGH -r S24.aln_report.txt Lom3_S24_L001_R1_001.fastq.gz Lom3_S24_L001_R2_001.fastq.gz S24.vdjca
 #mixcr align -c IGH -r S25.aln_report.txt Lom4_S25_L001_R1_001.fastq.gz Lom4_S25_L001_R2_001.fastq.gz S25.vdjca
 #mixcr align -c IGH -r S26.aln_report.txt Lom5_S26_L001_R1_001.fastq.gz Lom5_S26_L001_R2_001.fastq.gz S26.vdjca
