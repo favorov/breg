@@ -36,7 +36,7 @@ type clone struct {
 	//to know where it comes from
 }
 
-//test whether *c1 and *c2 goes to the same common clone
+//test whether *c1 and *c2 goes to the same combined clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
 func ifeqcl(c1 *clone, c2 *clone) bool {
 	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_share,max_terminal_del) 
@@ -46,12 +46,15 @@ func ifeqcl(c1 *clone, c2 *clone) bool {
 func string_nonstrict_match (s1 *string, s2 *string, maxmismatchshare float64, maxtermdel int) bool {
 	l1:=len(*s1)
 	l2:=len(*s2)
+	//too shifted
 	if ( l2-l1 > 2*maxtermdel || l1-l2 > 2*maxtermdel) {return false}
 	max_mismatch_no:=int(maxmismatchshare*float64(l1))
+	//shift s2 to left (e.g. start not from start)
 	for shift:=0; shift <= maxtermdel; shift++ {
 		shiftedstring:=(*s2)[shift:]
 		if (string_nonstrict_match_from_start(s1,&shiftedstring,max_mismatch_no,maxtermdel)) {return true}
 	}
+	//shift s1 to left (e.g. start not from start)
 	for shift:=1; shift <= maxtermdel; shift++ {
 		shiftedstring:=(*s1)[shift:]
 		if (string_nonstrict_match_from_start(&shiftedstring,s2,max_mismatch_no,maxtermdel)) {return true}
@@ -128,13 +131,17 @@ func print_clones_header(sample_names []string) {
 	for _, sample := range sample_names {
 		fmt.Print(sample, "\t")
 	}
+	//for alleles
 	fmt.Println("v\td\tj")
 }
 
 
 //form a string from alleles map
+//map of allele->counters per sample
 func string_from_allele_map(allele_map map[string][]int64, sample_names []string) string {
 	out:=""
+	//both first_allele and first_sample are bools to track 
+	//whether to print , before the value or not
 	first_allele := true
 	for allele,counters:=range allele_map {
 		if !first_allele {
@@ -155,8 +162,8 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 	return out
 }
 
-//print clones info; first, cdr is printed as key
-func print_common_clone(sample_names []string, common_clone *list.List) {
+//print clones info
+func print_combined_clone(sample_names []string, combined_clone *list.List) {
 	//it is to know the sample number in sample_names by the name
 	sample_by_name := make(map[string]int)
 	for n, name := range sample_names {
@@ -173,7 +180,7 @@ func print_common_clone(sample_names []string, common_clone *list.List) {
 
 	//counts
 	//the clone here is the list element with *clone as Value
-	for the_clone := common_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
+	for the_clone := combined_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
 		clone_ptr := the_clone.Value.(*clone) //not to convert every step
 		cdrs[clone_ptr.cdr3aa] = true
 		counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
@@ -194,7 +201,7 @@ func print_common_clone(sample_names []string, common_clone *list.List) {
 
 	//print - names
 	first_cdr := true
-	//fmt.Print(common_clone.Front().Value.(*clone).cdr3aa, "\t")
+	//fmt.Print(combined_clone.Front().Value.(*clone).cdr3aa, "\t")
 	for cdr, _ := range cdrs {
 		if !first_cdr {
 			fmt.Print(", ")
@@ -251,17 +258,17 @@ func main() {
 	}
 
 	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
-	//so, we take *clone one-by-one and present them to all clones already in the common clones
+	//so, we take *clone one-by-one and present them to all clones already in the combined clones
 	clonoteque := list.New()
 
 	for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
 		var found bool
-		for the_common_clone := clonoteque.Front(); the_common_clone != nil; the_common_clone = the_common_clone.Next() {
+		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 			found = false
-			for the_inner_clone := the_common_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-				//if the_clone is in common with a clone from the the_common_clone list.List, the_clone also goes to the_common_clone
+			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+				//if the_clone is in combined with a clone from the the_combined_clone list.List, the_clone also goes to the_combined_clone
 				if ifeqcl(the_inner_clone.Value.(*clone), the_clone.Value.(*clone)) {
-					the_common_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
+					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
 					found = true
 					break
 				}
@@ -281,13 +288,13 @@ func main() {
 	}
 
 	print_clones_header(sample_names)
-	for the_common_clone := clonoteque.Front(); the_common_clone != nil; the_common_clone = the_common_clone.Next() {
+	for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 		var count int64
-		for the_inner_clone := the_common_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+		for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
 			count += the_inner_clone.Value.(*clone).count
 		}
 		if count >= support_coverage  {
-			print_common_clone(sample_names, the_common_clone.Value.(*list.List))
+			print_combined_clone(sample_names, the_combined_clone.Value.(*list.List))
 		}
 	}
 }
