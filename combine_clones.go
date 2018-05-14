@@ -15,10 +15,17 @@ import (
 	//	"strings"
 )
 
-//output
+//output heavy
 const write_heavy = true
 const support_coverage_for_heavy = 500
 const heavy_prefix = "heavy_combined_clones"
+
+//output common
+const write_common = true
+const support_sample_coverage_for_common = 10
+const support_samples_for_common = 2 
+const common_prefix = "common_combined_clones"
+
 
 //this is for combibnig clones
 const max_terminal_del = 1 
@@ -177,17 +184,12 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 }
 
 //print clones info
-func print_combined_clone(sample_names []string, combined_clone *list.List) {
-	//it is to know the sample number in sample_names by the name
-	sample_by_name := make(map[string]int)
-	for n, name := range sample_names {
-		sample_by_name[name] = n
-	}
-
+func print_combined_clone(sample_names []string, sample_by_name map[string]int ,combined_clone *list.List) {
+	//first two it is to know the sample number in sample_names by the name and sample name by number
 	//prepare what-to-print
 	cdrs := make(map[string]bool)
-	counts := make([]int64, len(sample_names))
-	freqs := make([]float64, len(sample_names))
+	by_sample_counts := make([]int64, len(sample_names))
+	by_sample_freqs := make([]float64, len(sample_names))
 	v_alleles := make(map[string][]int64) //map of allele->counters per sample
 	d_alleles := make(map[string][]int64) //map of allele->counters per sample
 	j_alleles := make(map[string][]int64) //map of allele->counters per sample
@@ -197,8 +199,8 @@ func print_combined_clone(sample_names []string, combined_clone *list.List) {
 	for the_clone := combined_clone.Front(); the_clone != nil; the_clone = the_clone.Next() {
 		clone_ptr := the_clone.Value.(*clone) //not to convert every step
 		cdrs[clone_ptr.cdr3aa] = true
-		counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
-		freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
+		by_sample_counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
+		by_sample_freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
 		//init if it is the first mention
 		if 0 == len(v_alleles[clone_ptr.v]) { v_alleles[clone_ptr.v]=make([]int64,len(sample_names)) }
 		//add to counter
@@ -226,11 +228,11 @@ func print_combined_clone(sample_names []string, combined_clone *list.List) {
 	fmt.Print("\t")
 	//print - counts
 	for n, _ := range sample_names {
-		fmt.Print(counts[n], "\t")
+		fmt.Print(by_sample_counts[n], "\t")
 	}
 	//print - freqs
 	for n, _ := range sample_names {
-		fmt.Printf("%6f\t", freqs[n])
+		fmt.Printf("%6f\t", by_sample_freqs[n])
 	}
 
 	fmt.Print(string_from_allele_map(v_alleles,sample_names),"\t")
@@ -301,9 +303,17 @@ func main() {
 		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
 	}
 
+	//prepare number-by-name sample back index for printing
+	sample_by_name := make(map[string]int)
+	for n, name := range sample_names {
+		sample_by_name[name] = n
+	}
+
+	
+	//wrinting heavy
 	if write_heavy {
-		heavy_clones_file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,".tsv")
-		outf, err := os.Create(heavy_clones_file_name)
+		file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,"_reads.tsv")
+		outf, err := os.Create(file_name)
 		if err != nil {
         panic(err)
     }
@@ -317,8 +327,39 @@ func main() {
 				count += the_inner_clone.Value.(*clone).count
 			}
 			if count >= support_coverage_for_heavy  {
-				print_combined_clone(sample_names, the_combined_clone.Value.(*list.List))
+				print_combined_clone(sample_names, sample_by_name, the_combined_clone.Value.(*list.List))
 			}
+		}
+		os.Stdout=old_stdout
+	}
+	
+	//writing common
+	if write_common {
+		file_name:=fmt.Sprint(common_prefix,"_",support_samples_for_common,"_samples_with_",support_sample_coverage_for_common,"_reads.tsv")
+		outf, err := os.Create(file_name)
+		if err != nil {
+        panic(err)
+    }
+		defer outf.Close()
+		old_stdout := os.Stdout
+		os.Stdout=outf
+		print_clones_header(sample_names)
+		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+			by_sample_counts := make([]int64, len(sample_names))
+			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+				clone_ptr:=	the_inner_clone.Value.(*clone)
+				by_sample_counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
+				//if the_inner_clone.Value.(*clone).count >= support_sample_coverage_for_common {
+				//	populated_sample_count++
+				//}
+			}
+			var populated_sample_count int
+			for _,by_sample_count := range by_sample_counts {
+				if by_sample_count >= support_sample_coverage_for_common {populated_sample_count++}
+			}
+			if populated_sample_count >= support_samples_for_common  {
+				print_combined_clone(sample_names, sample_by_name, the_combined_clone.Value.(*list.List))
+			} 
 		}
 		os.Stdout=old_stdout
 	}
