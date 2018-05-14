@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"sort"
 	// "math"
 	//	"strings"
 )
@@ -145,18 +146,26 @@ func print_clones_header(sample_names []string) {
 //map of allele->counters per sample
 func string_from_allele_map(allele_map map[string][]int64, sample_names []string) string {
 	out:=""
-	//both first_allele and first_sample are bools to track 
-	//whether to print , before the value or not
-	first_allele := true
-	for allele,counters:=range allele_map {
-		if !first_allele {
+	//all the stuff with alleles is to get alleles in sorted order;
+	//allele,counters:=range allele_map give then unsorted
+	alleles := make([]string, 0, len(allele_map))
+	for allele := range allele_map {
+		alleles = append(alleles, allele)
+	}
+	sort.Strings(alleles)
+
+	for i, allele := range alleles {
+		counters:=allele_map[allele]
+		//do not print ; before first 
+		if i>1 {
 			out+="; "
 		}
-		first_allele = false
 		out=out+allele+": "
+		//first_sample is bool to track 
+		//whether to print , before the value or not
 		first_sample := true
 		for n,name:=range sample_names {
-			if (0 == counters[n]) {continue}
+			if 0 == counters[n] {continue}
 			if !first_sample {
 				out+=", "
 			}
@@ -191,15 +200,15 @@ func print_combined_clone(sample_names []string, combined_clone *list.List) {
 		counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
 		freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
 		//init if it is the first mention
-		if (0 == len(v_alleles[clone_ptr.v])) { v_alleles[clone_ptr.v]=make([]int64,len(sample_names)) }
+		if 0 == len(v_alleles[clone_ptr.v]) { v_alleles[clone_ptr.v]=make([]int64,len(sample_names)) }
 		//add to counter
 		v_alleles[clone_ptr.v][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
 		//init if it is the first mention
-		if (0 == len(d_alleles[clone_ptr.d])) { d_alleles[clone_ptr.d]=make([]int64,len(sample_names)) }
+		if 0 == len(d_alleles[clone_ptr.d]) { d_alleles[clone_ptr.d]=make([]int64,len(sample_names)) }
 		//add to counter
 		d_alleles[clone_ptr.d][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
 		//init if it is the first mention
-		if (0 == len(j_alleles[clone_ptr.j])) { j_alleles[clone_ptr.j]=make([]int64,len(sample_names)) }
+		if 0 == len(j_alleles[clone_ptr.j]) { j_alleles[clone_ptr.j]=make([]int64,len(sample_names)) }
 		//add to counter
 		j_alleles[clone_ptr.j][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
 	}
@@ -292,7 +301,7 @@ func main() {
 		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
 	}
 
-	if(write_heavy) {
+	if write_heavy {
 		heavy_clones_file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,".tsv")
 		println(heavy_clones_file_name)
 		print_clones_header(sample_names)
