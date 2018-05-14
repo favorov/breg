@@ -22,7 +22,7 @@ const heavy_prefix = "heavy_combined_clones"
 
 //output common
 const write_common = true
-const support_sample_coverage_for_common = 10
+const support_sample_coverage_for_common = 2 
 const support_samples_for_common = 2 
 const common_prefix = "common_combined_clones"
 
