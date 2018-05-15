@@ -164,7 +164,7 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 	for i, allele := range alleles {
 		counters:=allele_map[allele]
 		//do not print ; before first 
-		if i>1 {
+		if i>=1 {
 			out+="; "
 		}
 		out=out+allele+": "
@@ -312,7 +312,7 @@ func main() {
 	
 	//wrinting heavy
 	if write_heavy {
-		file_name:=fmt.Sprint(heavy_prefix,"_",support_coverage_for_heavy,"_reads.tsv")
+		file_name:=fmt.Sprint(heavy_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_support_",support_coverage_for_heavy,"_reads.tsv")
 		outf, err := os.Create(file_name)
 		if err != nil {
         panic(err)
@@ -335,7 +335,7 @@ func main() {
 	
 	//writing common
 	if write_common {
-		file_name:=fmt.Sprint(common_prefix,"_",support_samples_for_common,"_samples_with_",support_sample_coverage_for_common,"_reads.tsv")
+		file_name:=fmt.Sprint(common_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_samples_",support_samples_for_common,"_with_",support_sample_coverage_for_common,"_reads.tsv")
 		outf, err := os.Create(file_name)
 		if err != nil {
         panic(err)
