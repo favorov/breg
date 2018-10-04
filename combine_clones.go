@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"sort"
+	"io/ioutil"
 	// "math"
 	//	"strings"
 )
@@ -244,16 +245,33 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 }
 
 func main() {
-	sample_files := []string{
-		"vdj_.S22_clones.txt",
-		"vdj_.S23_clones.txt",
-		"vdj_.S24_clones.txt",
-		"vdj_.S25_clones.txt",
-		"vdj_.S26_clones.txt",
-		"vdj_.S27_clones.txt",
-		"vdj_.S28_clones.txt",
-		"vdj_.S29_clones.txt",
+
+	clone_files_folder := "../clones"
+	//we have a collection of files created by vdjtools convert here
+	clone_files_info, direrr := ioutil.ReadDir(clone_files_folder)
+	if direrr != nil {
+		log.Fatalf("Error reading dir %v: %v", clone_files_folder, direrr)
 	}
+
+	var sample_files []string
+	
+	for _, clone_file := range clone_files_info {
+		fmt.Println(clone_file.Name())
+		//sample_name := sample_regexp.FindString(sample_file)
+		//sample_names = append(sample_names, sample_name)
+		//readclones_from_file(sample_file, sample_name, all_clones)
+	}
+	os.Exit(0)
+	//sample_files := []string{
+	//	"vdj_.S22_clones.txt",
+	//	"vdj_.S23_clones.txt",
+	//	"vdj_.S24_clones.txt",
+	//	"vdj_.S25_clones.txt",
+	//	"vdj_.S26_clones.txt",
+	//	"vdj_.S27_clones.txt",
+	//	"vdj_.S28_clones.txt",
+	//	"vdj_.S29_clones.txt",
+	//}
 
 	//read all clone from file to clone table [samples][lines]
 	all_clones := list.New()
