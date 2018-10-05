@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"sort"
 	"io/ioutil"
+	"strings"
 	// "math"
-	//	"strings"
 )
 
 //output heavy
@@ -248,20 +248,33 @@ func main() {
 
 	clone_files_folder := "../clones"
 	//we have a collection of files created by vdjtools convert here
-	clone_files_info, direrr := ioutil.ReadDir(clone_files_folder)
-	if direrr != nil {
-		log.Fatalf("Error reading dir %v: %v", clone_files_folder, direrr)
+	clone_files_prefix:="vdj"
+	clone_files_completion:="clones.txt"
+	clone_files_chain_filter_string:="IGH" 
+	//it all will be command line
+	clone_files_info, err := ioutil.ReadDir(clone_files_folder)
+	if err != nil {
+		log.Fatalf("Error reading dir %v: %v", clone_files_folder, err)
 	}
 
-	var sample_files []string
+	var sample_files,sample_names []string
+	
+	clone_file_name_regstr := "^"+clone_files_prefix+".*"+clone_files_completion+"$"
+	clone_file_name_regexp, err := regexp.Compile(clone_file_name_regstr)
+	if err != nil {
+		log.Fatalf("Error compiling regexp %v: %v", clone_file_name_regstr, err)
+	}
 	
 	for _, clone_file := range clone_files_info {
-		fmt.Println(clone_file.Name())
+		name:=clone_file.Name()
+		//fmt.Println("test: ",name,"  ")
+		if (!clone_file_name_regexp.MatchString(name)) {continue}
+		if (-1==strings.Index(name, clone_files_chain_filter_string)){continue}
+		fmt.Println(name)
 		//sample_name := sample_regexp.FindString(sample_file)
 		//sample_names = append(sample_names, sample_name)
 		//readclones_from_file(sample_file, sample_name, all_clones)
 	}
-	os.Exit(0)
 	//sample_files := []string{
 	//	"vdj_.S22_clones.txt",
 	//	"vdj_.S23_clones.txt",
@@ -275,15 +288,16 @@ func main() {
 
 	//read all clone from file to clone table [samples][lines]
 	all_clones := list.New()
-	var sample_names []string
 
 	//prepare to parse "S22", "S23", etc in strings
 	sample_name_regstr := "S[0-9]*"
-	sample_regexp, reerr := regexp.Compile(sample_name_regstr)
-	if reerr != nil {
-		log.Fatalf("Error compiling regexp %v: %v", sample_name_regstr, reerr)
+	sample_regexp, err := regexp.Compile(sample_name_regstr)
+	if err != nil {
+		log.Fatalf("Error compiling regexp %v: %v", sample_name_regstr, err)
 	}
 
+	os.Exit(0)
+	
 	//read clones from files
 	for _, sample_file := range sample_files {
 		sample_name := sample_regexp.FindString(sample_file)
