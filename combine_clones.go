@@ -259,7 +259,7 @@ func main() {
 
 	var sample_files,sample_names []string
 	
-	clone_file_name_regstr := "^"+clone_files_prefix+".*"+clone_files_completion+"$"
+	clone_file_name_regstr := "^"+clone_files_prefix+"(.*)"+clone_files_completion+"$"
 	clone_file_name_regexp, err := regexp.Compile(clone_file_name_regstr)
 	if err != nil {
 		log.Fatalf("Error compiling regexp %v: %v", clone_file_name_regstr, err)
@@ -269,8 +269,9 @@ func main() {
 		name:=clone_file.Name()
 		//fmt.Println("test: ",name,"  ")
 		if (!clone_file_name_regexp.MatchString(name)) {continue}
-		if (-1==strings.Index(name, clone_files_chain_filter_string)){continue}
+		if (-1==strings.Index(name, clone_files_chain_filter_string)){continue} //just search substring
 		fmt.Println(name)
+		fmt.Println(clone_file_name_regexp.ReplaceAllString(name,"$1"))
 		//sample_name := sample_regexp.FindString(sample_file)
 		//sample_names = append(sample_names, sample_name)
 		//readclones_from_file(sample_file, sample_name, all_clones)
