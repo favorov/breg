@@ -1,3 +1,5 @@
+#we run it from the folder where the clone files will appear as result
+
 path_to_mixcr="d:/sasha/komfi-ms/immunoseq/tools/mixcr-2.1.12"
 path_to_vdjtools="d:/sasha/komfi-ms/immunoseq/tools/vdjtools-1.1.10"
 mixcr="java -Xmx4g -Xms3g -jar ${path_to_mixcr}/mixcr.jar"
