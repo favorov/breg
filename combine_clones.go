@@ -269,7 +269,7 @@ func main() {
 		name:=clone_file.Name()
 		//fmt.Println("test: ",name,"  ")
 		if (!clone_file_name_regexp.MatchString(name)) {continue}
-		if (-1==strings.Index(name, clone_files_chain_filter_string)){continue} //just search substring
+		if (-1==strings.Index(strings.ToUpper(name), strings.ToUpper(clone_files_chain_filter_string))){continue} //just search substring in uppercase
 		fmt.Println(name)
 		fmt.Println(clone_file_name_regexp.ReplaceAllString(name,"$1"))
 		//sample_name := sample_regexp.FindString(sample_file)
