@@ -259,7 +259,7 @@ func main() {
 
 	var sample_files,sample_names []string
 	
-	clone_file_name_regstr := "^"+clone_files_prefix+"(.*)"+clone_files_completion+"$"
+	clone_file_name_regstr := "^"+clone_files_prefix+"[.|_]+(.*?)[.|_]+"+clone_files_completion+"$"
 	clone_file_name_regexp, err := regexp.Compile(clone_file_name_regstr)
 	if err != nil {
 		log.Fatalf("Error compiling regexp %v: %v", clone_file_name_regstr, err)
