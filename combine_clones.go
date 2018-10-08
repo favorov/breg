@@ -16,6 +16,15 @@ import (
 	// "math"
 )
 
+//files for clones
+const clone_files_folder = "../clones"
+//we have a collection of files created by vdjtools convert here
+const clone_files_prefix="vdj"
+const clone_files_completion="clones.txt"
+const clone_files_chain_filter_string="IGH" 
+//it all will be command line
+
+
 //output heavy
 const write_heavy = true
 const support_coverage_for_heavy = 500
@@ -246,12 +255,6 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 
 func main() {
 
-	clone_files_folder := "../clones"
-	//we have a collection of files created by vdjtools convert here
-	clone_files_prefix:="vdj"
-	clone_files_completion:="clones.txt"
-	clone_files_chain_filter_string:="IGH" 
-	//it all will be command line
 	clone_files_info, err := ioutil.ReadDir(clone_files_folder)
 	if err != nil {
 		log.Fatalf("Error reading dir %v: %v", clone_files_folder, err)
@@ -270,7 +273,7 @@ func main() {
 		file_name:=clone_file.Name()
 		//fmt.Println("test: ",name,"  ")
 		if (!clone_file_name_regexp.MatchString(file_name)) {continue}
-		if (-1==strings.Index(strings.ToUpper(file_name), strings.ToUpper(clone_files_chain_filter_string))){continue} 
+		if (-1==strings.Index(strings.ToLower(file_name), strings.ToLower(clone_files_chain_filter_string))){continue} 
 		//just search substring in uppercase
 		sample_files = append(sample_files, file_name)
 	}
@@ -324,7 +327,7 @@ func main() {
 	
 	//wrinting heavy
 	if write_heavy {
-		file_name:=fmt.Sprint(heavy_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_support_",support_coverage_for_heavy,"_reads.tsv")
+		file_name:=fmt.Sprint(strings.ToLower(clone_files_chain_filter_string),"_",heavy_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_support_",support_coverage_for_heavy,"_reads.tsv")
 		outf, err := os.Create(file_name)
 		if err != nil {
         panic(err)
@@ -347,7 +350,7 @@ func main() {
 	
 	//writing common
 	if write_common {
-		file_name:=fmt.Sprint(common_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_samples_",support_samples_for_common,"_with_",support_sample_coverage_for_common,"_reads.tsv")
+		file_name:=fmt.Sprint(strings.ToLower(clone_files_chain_filter_string),"_",common_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_samples_",support_samples_for_common,"_with_",support_sample_coverage_for_common,"_reads.tsv")
 		outf, err := os.Create(file_name)
 		if err != nil {
         panic(err)
