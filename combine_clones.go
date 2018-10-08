@@ -265,45 +265,24 @@ func main() {
 		log.Fatalf("Error compiling regexp %v: %v", clone_file_name_regstr, err)
 	}
 	
-	for _, clone_file := range clone_files_info {
-		name:=clone_file.Name()
-		//fmt.Println("test: ",name,"  ")
-		if (!clone_file_name_regexp.MatchString(name)) {continue}
-		if (-1==strings.Index(strings.ToUpper(name), strings.ToUpper(clone_files_chain_filter_string))){continue} //just search substring in uppercase
-		fmt.Println(name)
-		fmt.Println(clone_file_name_regexp.ReplaceAllString(name,"$1"))
-		//sample_name := sample_regexp.FindString(sample_file)
-		//sample_names = append(sample_names, sample_name)
-		//readclones_from_file(sample_file, sample_name, all_clones)
-	}
-	//sample_files := []string{
-	//	"vdj_.S22_clones.txt",
-	//	"vdj_.S23_clones.txt",
-	//	"vdj_.S24_clones.txt",
-	//	"vdj_.S25_clones.txt",
-	//	"vdj_.S26_clones.txt",
-	//	"vdj_.S27_clones.txt",
-	//	"vdj_.S28_clones.txt",
-	//	"vdj_.S29_clones.txt",
-	//}
 
-	//read all clone from file to clone table [samples][lines]
+	for _, clone_file := range clone_files_info {
+		file_name:=clone_file.Name()
+		//fmt.Println("test: ",name,"  ")
+		if (!clone_file_name_regexp.MatchString(file_name)) {continue}
+		if (-1==strings.Index(strings.ToUpper(file_name), strings.ToUpper(clone_files_chain_filter_string))){continue} 
+		//just search substring in uppercase
+		sample_files = append(sample_files, file_name)
+	}
+	
+	//read all clone from appropriate files to clone table [samples][lines]
 	all_clones := list.New()
 
-	//prepare to parse "S22", "S23", etc in strings
-	sample_name_regstr := "S[0-9]*"
-	sample_regexp, err := regexp.Compile(sample_name_regstr)
-	if err != nil {
-		log.Fatalf("Error compiling regexp %v: %v", sample_name_regstr, err)
-	}
-
-	os.Exit(0)
-	
 	//read clones from files
 	for _, sample_file := range sample_files {
-		sample_name := sample_regexp.FindString(sample_file)
+		sample_name := clone_file_name_regexp.ReplaceAllString(sample_file,"$1") 
 		sample_names = append(sample_names, sample_name)
-		readclones_from_file(sample_file, sample_name, all_clones)
+		readclones_from_file(clone_files_folder+"/"+sample_file, sample_name, all_clones)
 	}
 
 	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
