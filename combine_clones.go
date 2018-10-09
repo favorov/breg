@@ -13,6 +13,7 @@ import (
 	"sort"
 	"io/ioutil"
 	"strings"
+	"flag"
 	// "math"
 )
 
@@ -229,16 +230,17 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 }
 
 
-
-
 func main() {
 
+	chainPtr := flag.String("chain", "IGH", "chain (actually, file name filter)")
+	clnsfolderPtr := flag.String("clones-folder", "../clones", "folder with the files (created by vdltools Convert)")
+	flag.Parse()
 	//files for clones
-	const clone_files_folder = "../clones"
+	clone_files_chain_filter_string := *chainPtr
+	clone_files_folder := *clnsfolderPtr
 	//we have a collection of files created by vdjtools convert here
 	const clone_files_prefix="vdj"
 	const clone_files_completion="clones.txt"
-	const clone_files_chain_filter_string="IGK" 
 	//it all will be command line
 
 
