@@ -16,31 +16,6 @@ import (
 	// "math"
 )
 
-//files for clones
-const clone_files_folder = "../clones"
-//we have a collection of files created by vdjtools convert here
-const clone_files_prefix="vdj"
-const clone_files_completion="clones.txt"
-const clone_files_chain_filter_string="IGH" 
-//it all will be command line
-
-
-//output heavy
-const write_heavy = true
-const support_coverage_for_heavy = 500
-const heavy_prefix = "heavy_combined_clones"
-
-//output common
-const write_common = true
-const support_sample_coverage_for_common = 2 
-const support_samples_for_common = 2 
-const common_prefix = "common_combined_clones"
-
-
-//this is for combibnig clones
-const max_terminal_del = 1 
-const max_mismatches_share = 0.05 
-
 type clone struct {
 	cdr3aa string
 	cdr3nt string
@@ -61,7 +36,7 @@ type clone struct {
 
 //test whether *c1 and *c2 goes to the same combined clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
-func ifeqcl(c1 *clone, c2 *clone) bool {
+func ifeqcl(c1 *clone, c2 *clone,max_mismatches_share float64, max_terminal_del int) bool {
 	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_share,max_terminal_del) 
 }
 
@@ -253,7 +228,35 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 	return
 }
 
+
+
+
 func main() {
+
+	//files for clones
+	const clone_files_folder = "../clones"
+	//we have a collection of files created by vdjtools convert here
+	const clone_files_prefix="vdj"
+	const clone_files_completion="clones.txt"
+	const clone_files_chain_filter_string="IGK" 
+	//it all will be command line
+
+
+	//output heavy
+	const write_heavy = true
+	const support_coverage_for_heavy = 500
+	const heavy_prefix = "heavy_combined_clones"
+
+	//output common
+	const write_common = true
+	const support_sample_coverage_for_common = 2 
+	const support_samples_for_common = 2 
+	const common_prefix = "common_combined_clones"
+
+
+	//this is for combibnig clones
+	const max_terminal_del = 1 
+	const max_mismatches_share = 0.05 
 
 	clone_files_info, err := ioutil.ReadDir(clone_files_folder)
 	if err != nil {
@@ -298,7 +301,7 @@ func main() {
 			found = false
 			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
 				//if the_clone is in combined with a clone from the the_combined_clone list.List, the_clone also goes to the_combined_clone
-				if ifeqcl(the_inner_clone.Value.(*clone), the_clone.Value.(*clone)) {
+				if ifeqcl(the_inner_clone.Value.(*clone), the_clone.Value.(*clone),max_mismatches_share,max_terminal_del) {
 					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
 					found = true
 					break
