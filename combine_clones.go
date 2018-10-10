@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"flag"
+	// "errors"
 	// "math"
 )
 
@@ -231,17 +232,13 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 
 
 func main() {
-
-	chainPtr := flag.String("chain", "IGH", "chain (actually, file name filter)")
-	clnsfolderPtr := flag.String("clones-folder", "../clones", "folder with the files (created by vdltools Convert)")
+	var clone_files_chain_filter_string, clone_files_folder string
+	var clone_files_prefix, clone_files_completion string
+	flag.StringVar(&clone_files_chain_filter_string, "chain", "IGH", "chain (actually, file name filter)")
+	flag.StringVar(&clone_files_folder,"clones-folder", ".", "folder with the clone files (which are created by vdltools Convert)")
+	flag.StringVar(&clone_files_prefix, "prefix", "vdj", "clone files prefix")
+	flag.StringVar(&clone_files_completion, "completion", "clones.txt", "clone files completion")
 	flag.Parse()
-	//files for clones
-	clone_files_chain_filter_string := *chainPtr
-	clone_files_folder := *clnsfolderPtr
-	//we have a collection of files created by vdjtools convert here
-	const clone_files_prefix="vdj"
-	const clone_files_completion="clones.txt"
-	//it all will be command line
 
 
 	//output heavy
