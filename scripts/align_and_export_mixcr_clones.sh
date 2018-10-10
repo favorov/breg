@@ -1,9 +1,9 @@
 #we run it from the folder where the clone files will appear as result
 
-path_to_mixcr="d:/sasha/komfi-ms/immunoseq/tools/mixcr-2.1.12"
-path_to_vdjtools="d:/sasha/komfi-ms/immunoseq/tools/vdjtools-1.1.10"
-mixcr="java -Xmx4g -Xms3g -jar ${path_to_mixcr}/mixcr.jar"
-vdjtools="java -jar ${path_to_vdjtools}/vdjtools-1.1.10.jar"
+path_to_mixcr="~/gabibov/tools/mixcr-2.1.12"
+path_to_vdjtools="~/gabibov/tools/vdjtools-1.1.11"
+mixcr="java -jar ${path_to_mixcr}/mixcr.jar"
+vdjtools="java -jar ${path_to_vdjtools}/vdjtools-1.1.11.jar"
 fastq_path="../fastq"
 
 SAMPLES=(S1 S2 S3 S4 S5 S6 S7 S8 S22 S23 S24 S25 S26 S27 S28 S29)
