@@ -248,14 +248,16 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int, 
 func main() {
 	var clone_files_chain_filter_string, clone_files_folder string
 	var clone_files_prefix, clone_files_completion string
+	var max_terminal_del int
+	var max_mismatches_share float64
 	//What is the input
 	flag.StringVar(&clone_files_chain_filter_string, "chain", "IGH", "chain (actually, file name filter)")
 	flag.StringVar(&clone_files_folder, "clones-folder", ".", "folder with the clone files (which are created by vdltools Convert)")
 	flag.StringVar(&clone_files_prefix, "prefix", "vdj", "clone files prefix")
 	flag.StringVar(&clone_files_completion, "completion", "clones.txt", "clone files completion")
 	//How to combine clones
-	flag.StringVar(&max_terminal_del, "terminal-del", 1, "Maximal terminal CDR3 deletion difference that is allowed inside one clone")
-	flag.StringVar(&max_mismatches_share, "mismatches-share", 0.05, "Maximal share of in-CDR3 mismatches that is allowed inside one clone")
+	flag.IntVar(&max_terminal_del, "terminal-del", 1, "Maximal terminal CDR3 deletion difference that is allowed inside one clone")
+	flag.Float64Var(&max_mismatches_share, "mismatches-share", 0.05, "Maximal share of in-CDR3 mismatches that is allowed inside one clone")
 	flag.Parse()
 
 	//output heavy
