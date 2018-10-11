@@ -246,10 +246,12 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int, 
 }
 
 func main() {
-	var clone_files_chain_filter_string, clone_files_folder string
+	var clone_files_chain_filter_string, clone_files_folder, heavy_prefix, common_prefix string
 	var clone_files_prefix, clone_files_completion string
-	var max_terminal_del int
+	var max_terminal_del, support_samples_for_common int
+	var support_coverage_for_heavy, support_sample_coverage_for_common int64
 	var max_mismatches_share float64
+	var write_heavy, write_common bool
 	//What is the input
 	flag.StringVar(&clone_files_chain_filter_string, "chain", "IGH", "chain (actually, file name filter)")
 	flag.StringVar(&clone_files_folder, "clones-folder", ".", "folder with the clone files (which are created by vdltools Convert)")
@@ -258,18 +260,18 @@ func main() {
 	//How to combine clones
 	flag.IntVar(&max_terminal_del, "terminal-del", 1, "Maximal terminal CDR3 deletion difference that is allowed inside one clone")
 	flag.Float64Var(&max_mismatches_share, "mismatches-share", 0.05, "Maximal share of in-CDR3 mismatches that is allowed inside one clone")
-	flag.Parse()
-
 	//output heavy
-	const write_heavy = true
-	const support_coverage_for_heavy = 500
-	const heavy_prefix = "heavy_combined_clones"
+	flag.BoolVar(&write_heavy, "write-heavy", true, "Whether to output heavy (with net coverage >= coverage-for-heavy)")
+	flag.Int64Var(&support_coverage_for_heavy, "coverage-for-heavy", 500, "This net coverage makes the clone heavy, no matter ho many samples it is supported by")
+	flag.StringVar(&heavy_prefix, "heavy-prefix", "heavy_combined_clones", "Prefix for output file with heavy clones")
 
 	//output common
-	const write_common = true
-	const support_sample_coverage_for_common = 2
-	const support_samples_for_common = 2
-	const common_prefix = "common_combined_clones"
+	flag.BoolVar(&write_common, "write-common", true, "Whether to output common (with samples>=samples-common that carry this clone)")
+	flag.Int64Var(&support_sample_coverage_for_common, "sample-coverage-for-common", 2, "This coverage makes a sample to be claimed as carrying this clone")
+	flag.IntVar(&support_samples_for_common, "samples-for-common", 2, "A clone that is carried by the number of more samples is common")
+	flag.StringVar(&heavy_prefix, "common-prefix", "common_combined_clones", "Prefix for output file with common clones")
+
+	flag.Parse()
 
 	clone_files_info, err := ioutil.ReadDir(clone_files_folder)
 	if err != nil {
