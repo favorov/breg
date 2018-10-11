@@ -309,6 +309,9 @@ func main() {
 		readclones_from_file(clone_files_folder+"/"+sample_file, sample_name, all_clones)
 	}
 
+	//to have the sample names sorted
+	sort.Strings(sample_names)
+
 	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
 	//so, we take *clone one-by-one and present them to all clones already in the combined clones
 	clonoteque := list.New()
