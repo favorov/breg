@@ -4,16 +4,16 @@ import (
 	"bufio"
 	"container/list"
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
-	"strconv"
 	"sort"
-	"io/ioutil"
+	"strconv"
 	"strings"
-	"flag"
 	// "errors"
 	// "math"
 )
@@ -38,44 +38,52 @@ type clone struct {
 
 //test whether *c1 and *c2 goes to the same combined clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
-func ifeqcl(c1 *clone, c2 *clone,max_mismatches_share float64, max_terminal_del int) bool {
-	return string_nonstrict_match(&c1.cdr3aa,&c2.cdr3aa,max_mismatches_share,max_terminal_del) 
+func ifeqcl(c1 *clone, c2 *clone, max_mismatches_share float64, max_terminal_del int) bool {
+	return string_nonstrict_match(&c1.cdr3aa, &c2.cdr3aa, max_mismatches_share, max_terminal_del)
 }
 
 //shift the start, test the match
-func string_nonstrict_match (s1 *string, s2 *string, maxmismatchshare float64, maxtermdel int) bool {
-	l1:=len(*s1)
-	l2:=len(*s2)
+func string_nonstrict_match(s1 *string, s2 *string, maxmismatchshare float64, maxtermdel int) bool {
+	l1 := len(*s1)
+	l2 := len(*s2)
 	//too shifted
-	if ( l2-l1 > 2*maxtermdel || l1-l2 > 2*maxtermdel) {return false}
-	max_mismatch_no:=int(maxmismatchshare*float64(l1))
+	if l2-l1 > 2*maxtermdel || l1-l2 > 2*maxtermdel {
+		return false
+	}
+	max_mismatch_no := int(maxmismatchshare * float64(l1))
 	//shift s2 to left (e.g. start not from start)
-	for shift:=0; shift <= maxtermdel; shift++ {
-		shiftedstring:=(*s2)[shift:]
-		if (string_nonstrict_match_from_start(s1,&shiftedstring,max_mismatch_no,maxtermdel)) {return true}
+	for shift := 0; shift <= maxtermdel; shift++ {
+		shiftedstring := (*s2)[shift:]
+		if string_nonstrict_match_from_start(s1, &shiftedstring, max_mismatch_no, maxtermdel) {
+			return true
+		}
 	}
 	//shift s1 to left (e.g. start not from start)
-	for shift:=1; shift <= maxtermdel; shift++ {
-		shiftedstring:=(*s1)[shift:]
-		if (string_nonstrict_match_from_start(&shiftedstring,s2,max_mismatch_no,maxtermdel)) {return true}
+	for shift := 1; shift <= maxtermdel; shift++ {
+		shiftedstring := (*s1)[shift:]
+		if string_nonstrict_match_from_start(&shiftedstring, s2, max_mismatch_no, maxtermdel) {
+			return true
+		}
 	}
 	return false
 }
 
-func string_nonstrict_match_from_start (s1 *string, s2 *string, maxmismatch, maxlendiff int) bool {
+func string_nonstrict_match_from_start(s1 *string, s2 *string, maxmismatch, maxlendiff int) bool {
 	//the strings have common start, and they can differ in lenght no more than maxlendiff
-	if (len(*s1)>len(*s2)) {
-		s3:=s1
-		s1=s2
-		s2=s3
+	if len(*s1) > len(*s2) {
+		s3 := s1
+		s1 = s2
+		s2 = s3
 	}
 	//s2 now longer or eq
-	if (len(*s2)-len(*s1) > maxlendiff) { return false }
+	if len(*s2)-len(*s1) > maxlendiff {
+		return false
+	}
 	mismatches := 0
-	for i := 0; i < len(*s1); i++ {	
-		if ((*s1)[i] != (*s2)[i]) {
+	for i := 0; i < len(*s1); i++ {
+		if (*s1)[i] != (*s2)[i] {
 			mismatches++
-			if (mismatches>maxmismatch) {
+			if mismatches > maxmismatch {
 				return false
 			}
 		}
@@ -135,11 +143,10 @@ func print_clones_header(sample_names []string) {
 	fmt.Println("v\td\tj")
 }
 
-
 //form a string from alleles map
 //map of allele->counters per sample
 func string_from_allele_map(allele_map map[string][]int64, sample_names []string) string {
-	out:=""
+	out := ""
 	//all the stuff with alleles is to get alleles in sorted order;
 	//allele,counters:=range allele_map give then unsorted
 	alleles := make([]string, 0, len(allele_map))
@@ -149,29 +156,31 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 	sort.Strings(alleles)
 
 	for i, allele := range alleles {
-		counters:=allele_map[allele]
-		//do not print ; before first 
-		if i>=1 {
-			out+="; "
+		counters := allele_map[allele]
+		//do not print ; before first
+		if i >= 1 {
+			out += "; "
 		}
-		out=out+allele+": "
-		//first_sample is bool to track 
+		out = out + allele + ": "
+		//first_sample is bool to track
 		//whether to print , before the value or not
 		first_sample := true
-		for n,name:=range sample_names {
-			if 0 == counters[n] {continue}
+		for n, name := range sample_names {
+			if 0 == counters[n] {
+				continue
+			}
 			if !first_sample {
-				out+=", "
+				out += ", "
 			}
 			first_sample = false
-			out+=fmt.Sprint(counters[n]," in ",name)
+			out += fmt.Sprint(counters[n], " in ", name)
 		}
 	}
 	return out
 }
 
 //print clones info
-func print_combined_clone(sample_names []string, sample_by_name map[string]int ,combined_clone *list.List) {
+func print_combined_clone(sample_names []string, sample_by_name map[string]int, combined_clone *list.List) {
 	//first two it is to know the sample number in sample_names by the name and sample name by number
 	//prepare what-to-print
 	cdrs := make(map[string]bool)
@@ -189,17 +198,23 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 		by_sample_counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
 		by_sample_freqs[sample_by_name[clone_ptr.sample]] += clone_ptr.freq
 		//init if it is the first mention
-		if 0 == len(v_alleles[clone_ptr.v]) { v_alleles[clone_ptr.v]=make([]int64,len(sample_names)) }
+		if 0 == len(v_alleles[clone_ptr.v]) {
+			v_alleles[clone_ptr.v] = make([]int64, len(sample_names))
+		}
 		//add to counter
-		v_alleles[clone_ptr.v][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		v_alleles[clone_ptr.v][sample_by_name[clone_ptr.sample]] += clone_ptr.count
 		//init if it is the first mention
-		if 0 == len(d_alleles[clone_ptr.d]) { d_alleles[clone_ptr.d]=make([]int64,len(sample_names)) }
+		if 0 == len(d_alleles[clone_ptr.d]) {
+			d_alleles[clone_ptr.d] = make([]int64, len(sample_names))
+		}
 		//add to counter
-		d_alleles[clone_ptr.d][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		d_alleles[clone_ptr.d][sample_by_name[clone_ptr.sample]] += clone_ptr.count
 		//init if it is the first mention
-		if 0 == len(j_alleles[clone_ptr.j]) { j_alleles[clone_ptr.j]=make([]int64,len(sample_names)) }
+		if 0 == len(j_alleles[clone_ptr.j]) {
+			j_alleles[clone_ptr.j] = make([]int64, len(sample_names))
+		}
 		//add to counter
-		j_alleles[clone_ptr.j][sample_by_name[clone_ptr.sample]]+=clone_ptr.count
+		j_alleles[clone_ptr.j][sample_by_name[clone_ptr.sample]] += clone_ptr.count
 	}
 
 	//print - names
@@ -222,24 +237,22 @@ func print_combined_clone(sample_names []string, sample_by_name map[string]int ,
 		fmt.Printf("%6f\t", by_sample_freqs[n])
 	}
 
-	fmt.Print(string_from_allele_map(v_alleles,sample_names),"\t")
-	fmt.Print(string_from_allele_map(d_alleles,sample_names),"\t")
-	fmt.Print(string_from_allele_map(j_alleles,sample_names))
+	fmt.Print(string_from_allele_map(v_alleles, sample_names), "\t")
+	fmt.Print(string_from_allele_map(d_alleles, sample_names), "\t")
+	fmt.Print(string_from_allele_map(j_alleles, sample_names))
 
 	fmt.Println()
 	return
 }
 
-
 func main() {
 	var clone_files_chain_filter_string, clone_files_folder string
 	var clone_files_prefix, clone_files_completion string
 	flag.StringVar(&clone_files_chain_filter_string, "chain", "IGH", "chain (actually, file name filter)")
-	flag.StringVar(&clone_files_folder,"clones-folder", ".", "folder with the clone files (which are created by vdltools Convert)")
+	flag.StringVar(&clone_files_folder, "clones-folder", ".", "folder with the clone files (which are created by vdltools Convert)")
 	flag.StringVar(&clone_files_prefix, "prefix", "vdj", "clone files prefix")
 	flag.StringVar(&clone_files_completion, "completion", "clones.txt", "clone files completion")
 	flag.Parse()
-
 
 	//output heavy
 	const write_heavy = true
@@ -248,44 +261,46 @@ func main() {
 
 	//output common
 	const write_common = true
-	const support_sample_coverage_for_common = 2 
-	const support_samples_for_common = 2 
+	const support_sample_coverage_for_common = 2
+	const support_samples_for_common = 2
 	const common_prefix = "common_combined_clones"
 
-
 	//this is for combibnig clones
-	const max_terminal_del = 1 
-	const max_mismatches_share = 0.05 
+	const max_terminal_del = 1
+	const max_mismatches_share = 0.05
 
 	clone_files_info, err := ioutil.ReadDir(clone_files_folder)
 	if err != nil {
 		log.Fatalf("Error reading dir %v: %v", clone_files_folder, err)
 	}
 
-	var sample_files,sample_names []string
-	
-	clone_file_name_regstr := "^"+clone_files_prefix+"[.|_]+(.*?)[.|_]+"+clone_files_completion+"$"
+	var sample_files, sample_names []string
+
+	clone_file_name_regstr := "^" + clone_files_prefix + "[.|_]+(.*?)[.|_]+" + clone_files_completion + "$"
 	clone_file_name_regexp, err := regexp.Compile(clone_file_name_regstr)
 	if err != nil {
 		log.Fatalf("Error compiling regexp %v: %v", clone_file_name_regstr, err)
 	}
-	
 
 	for _, clone_file := range clone_files_info {
-		file_name:=clone_file.Name()
+		file_name := clone_file.Name()
 		//fmt.Println("test: ",name,"  ")
-		if (!clone_file_name_regexp.MatchString(file_name)) {continue}
-		if (-1==strings.Index(strings.ToLower(file_name), strings.ToLower(clone_files_chain_filter_string))){continue} 
+		if !clone_file_name_regexp.MatchString(file_name) {
+			continue
+		}
+		if -1 == strings.Index(strings.ToLower(file_name), strings.ToLower(clone_files_chain_filter_string)) {
+			continue
+		}
 		//just search substring in uppercase
 		sample_files = append(sample_files, file_name)
 	}
-	
+
 	//read all clone from appropriate files to clone table [samples][lines]
 	all_clones := list.New()
 
 	//read clones from files
 	for _, sample_file := range sample_files {
-		sample_name := clone_file_name_regexp.ReplaceAllString(sample_file,"$1") 
+		sample_name := clone_file_name_regexp.ReplaceAllString(sample_file, "$1")
 		sample_names = append(sample_names, sample_name)
 		readclones_from_file(clone_files_folder+"/"+sample_file, sample_name, all_clones)
 	}
@@ -300,7 +315,7 @@ func main() {
 			found = false
 			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
 				//if the_clone is in combined with a clone from the the_combined_clone list.List, the_clone also goes to the_combined_clone
-				if ifeqcl(the_inner_clone.Value.(*clone), the_clone.Value.(*clone),max_mismatches_share,max_terminal_del) {
+				if ifeqcl(the_inner_clone.Value.(*clone), the_clone.Value.(*clone), max_mismatches_share, max_terminal_del) {
 					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
 					found = true
 					break
@@ -328,62 +343,64 @@ func main() {
 
 	//prepare prefix
 
-	out_file_name_prefix:=""
-	if (len(clone_files_chain_filter_string)>0) {
-		out_file_name_prefix=strings.ToLower(clone_files_chain_filter_string)+"_"
+	out_file_name_prefix := ""
+	if len(clone_files_chain_filter_string) > 0 {
+		out_file_name_prefix = strings.ToLower(clone_files_chain_filter_string) + "_"
 	}
 
 	//wrinting heavy
 	if write_heavy {
-		file_name:=fmt.Sprint(out_file_name_prefix,heavy_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_support_",support_coverage_for_heavy,"_reads.tsv")
+		file_name := fmt.Sprint(out_file_name_prefix, heavy_prefix, "_termdel_", max_terminal_del, "_mismatch_", max_mismatches_share, "_support_", support_coverage_for_heavy, "_reads.tsv")
 		outf, err := os.Create(file_name)
 		if err != nil {
-        panic(err)
-    }
+			panic(err)
+		}
 		defer outf.Close()
 		old_stdout := os.Stdout
-		os.Stdout=outf
+		os.Stdout = outf
 		print_clones_header(sample_names)
 		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 			var count int64
 			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
 				count += the_inner_clone.Value.(*clone).count
 			}
-			if count >= support_coverage_for_heavy  {
+			if count >= support_coverage_for_heavy {
 				print_combined_clone(sample_names, sample_by_name, the_combined_clone.Value.(*list.List))
 			}
 		}
-		os.Stdout=old_stdout
+		os.Stdout = old_stdout
 	}
-	
+
 	//writing common
 	if write_common {
-		file_name:=fmt.Sprint(out_file_name_prefix,common_prefix,"_termdel_",max_terminal_del,"_mismatch_",max_mismatches_share,"_samples_",support_samples_for_common,"_with_",support_sample_coverage_for_common,"_reads.tsv")
+		file_name := fmt.Sprint(out_file_name_prefix, common_prefix, "_termdel_", max_terminal_del, "_mismatch_", max_mismatches_share, "_samples_", support_samples_for_common, "_with_", support_sample_coverage_for_common, "_reads.tsv")
 		outf, err := os.Create(file_name)
 		if err != nil {
-        panic(err)
-    }
+			panic(err)
+		}
 		defer outf.Close()
 		old_stdout := os.Stdout
-		os.Stdout=outf
+		os.Stdout = outf
 		print_clones_header(sample_names)
 		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 			by_sample_counts := make([]int64, len(sample_names))
 			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-				clone_ptr:=	the_inner_clone.Value.(*clone)
+				clone_ptr := the_inner_clone.Value.(*clone)
 				by_sample_counts[sample_by_name[clone_ptr.sample]] += clone_ptr.count
 				//if the_inner_clone.Value.(*clone).count >= support_sample_coverage_for_common {
 				//	populated_sample_count++
 				//}
 			}
 			var populated_sample_count int
-			for _,by_sample_count := range by_sample_counts {
-				if by_sample_count >= support_sample_coverage_for_common {populated_sample_count++}
+			for _, by_sample_count := range by_sample_counts {
+				if by_sample_count >= support_sample_coverage_for_common {
+					populated_sample_count++
+				}
 			}
-			if populated_sample_count >= support_samples_for_common  {
+			if populated_sample_count >= support_samples_for_common {
 				print_combined_clone(sample_names, sample_by_name, the_combined_clone.Value.(*list.List))
-			} 
+			}
 		}
-		os.Stdout=old_stdout
+		os.Stdout = old_stdout
 	}
 }
