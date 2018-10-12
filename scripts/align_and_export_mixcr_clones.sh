@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #we run it from the folder where the clone files will appear as result
 
 path_to_mixcr="/home/sasha/gabibov/tools/mixcr-2.1.12"
