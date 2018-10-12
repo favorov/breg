@@ -269,7 +269,7 @@ func main() {
 	flag.BoolVar(&write_common, "write-common", true, "Whether to output common (with samples>=samples-common that carry this clone)")
 	flag.Int64Var(&support_sample_coverage_for_common, "sample-coverage-for-common", 2, "This coverage makes a sample to be claimed as carrying this clone")
 	flag.IntVar(&support_samples_for_common, "samples-for-common", 2, "A clone that is carried by the number of more samples is common")
-	flag.StringVar(&heavy_prefix, "common-prefix", "common_combined_clones", "Prefix for output file with common clones")
+	flag.StringVar(&common_prefix, "common-prefix", "common_combined_clones", "Prefix for output file with common clones")
 
 	flag.Parse()
 
