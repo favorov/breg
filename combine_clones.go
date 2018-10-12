@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"github.com/xlab/handysort"
 	// "errors"
 	// "math"
 )
@@ -153,7 +154,7 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 	for allele := range allele_map {
 		alleles = append(alleles, allele)
 	}
-	sort.Strings(alleles)
+	sort.Sort(handysort.Strins(alleles))
 
 	for i, allele := range alleles {
 		counters := allele_map[allele]
@@ -310,7 +311,7 @@ func main() {
 	}
 
 	//to have the sample names sorted
-	sort.Strings(sample_names)
+	sort.Sort(handysort.Strings(sample_names))
 
 	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
 	//so, we take *clone one-by-one and present them to all clones already in the combined clones
