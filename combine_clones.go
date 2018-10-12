@@ -300,6 +300,10 @@ func main() {
 		sample_files = append(sample_files, file_name)
 	}
 
+	if 0==len(sample_files) {
+		log.Fatalf("No clone input files!")
+	}
+
 	//read all clone from appropriate files to clone table [samples][lines]
 	all_clones := list.New()
 
