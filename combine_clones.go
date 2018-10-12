@@ -154,7 +154,7 @@ func string_from_allele_map(allele_map map[string][]int64, sample_names []string
 	for allele := range allele_map {
 		alleles = append(alleles, allele)
 	}
-	sort.Sort(handysort.Strins(alleles))
+	sort.Sort(handysort.Strings(alleles))
 
 	for i, allele := range alleles {
 		counters := allele_map[allele]
