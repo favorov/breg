@@ -1,15 +1,14 @@
 #we run it from the folder where the clone files will appear as result
 #we suppose that mixcr is at ../tools/mixcr.version
 
-#path_to_mixcr="d:/sasha/komfi-ms/immunoseq/tools/mixcr-3.0.5"
 path_to_mixcr="../tools/mixcr-3.0.5"
-#path_to_vdjtools="d:/sasha/komfi-ms/immunoseq/tools/vdjtools-1.2.1"
 mixcr="java -Xmx4g -Xms3g -jar ${path_to_mixcr}/mixcr.jar"
+#path_to_vdjtools="../vdjtools-1.2.1"
 #vdjtools="java -jar ${path_to_vdjtools}/vdjtools-1.2.1.jar"
 fastq_path="../fastq"
 
 SAMPLES=(S1 S2 S3 S4 S5 S6 S7 S8 S22 S23 S24 S25 S26 S27 S28 S29)
-SAMPLE=(S1)
+SAMPLE=(S1) #this is to test
 CHAINS=(IGH IGL IGK)
 CHAIN=(IGH)
 #align -g (--save-reads) is to save reads
@@ -27,35 +26,4 @@ for sample in ${SAMPLE[@]}; do
 	clns_file=${sample}.clns
 	$mixcr assemble -OassemblingFeatures="[CDR1+FR2+CDR2+FR3+CDR3]" -f $vdjca_file $clns_file
 	$mixcr exportClones -f $clns_file ${clns_file}.tsv
-	#for chain in ${CHAINS[@]}; do
-		#fastq_pair=`find $fastq_path -name "*_${sample}_*"`
-		#vdjca_file_with_reads=${sample}.${chain}.with.reads.vdjca
-		#if [ ! -f $vdjca_file_with_reads ]
-		#then 
-		#	$mixcr align -g -c ${chain} -r ${sample}.${chain}.aln.report.with.reads.txt ${fastq_pair} $vdjca_file_with_reads
-		#else
-		#	echo "File $vdjca_file_with_reads exists."
-		#fi
-		#clns_file=${sample}.${chain}.clns
-		#if [ ! -f $clns_file ]
-		#then 
-		#	$mixcr assemble -r ${sample}.${chain}.assemb.report.txt $vdjca_file $clns_file
-		#else
-		#	echo "File $clns_file exists."
-		#fi
-		#clones_text_file=${sample}.${chain}.clones.txt
-		#if [ ! -f $clones_text_file ]
-		#then 
-		#	$mixcr exportClones $clns_file $clones_text_file
-		#else
-		#	echo "File $clones_text_file exists."
-		#fi
-		#vdj_clones_text_file=vdj.${sample}.${chain}.clones.txt
-		#if [ ! -f $vdj_clones_text_file ]
-		#then 
-		#	$vdjtools Convert -S mixcr $clones_text_file vdj
-		#else
-		#	echo "File $vdj_clones_text_file exists."
-		#fi
-	#done
 done
