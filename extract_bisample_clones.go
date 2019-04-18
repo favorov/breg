@@ -209,23 +209,23 @@ func main() {
 		}
 		//prepare fasta....
 		var outfilename string
-		front:=output_prefix,the_combined_clone.Value.(*list.List).Front().Value.(*clone)
-		outfilename=fmt.Sprint(output_files_folder,"/",front.aaSeqCDR3,"_",front.subject_id,output_suffix)
+		front:=the_combined_clone.Value.(*list.List).Front().Value.(*clone)
+		outfilename=fmt.Sprint(output_files_folder,"/",output_prefix,front.aaSeqCDR3,"_",front.subject_id,output_suffix)
 		f, err := os.Create(outfilename)
-    check(err)
-    defer f.Close()
+    if(err!=nil){log.Fatalf("Error creating file: %v", err)}
+		defer f.Close()
 		//writing fasta
 		var ws string
 		ws=fmt.Sprint("; fasta for ",the_combined_clone.Value.(*list.List).Front().Value.(*clone).aaSeqCDR3," clone from ",input_file," file.")
 		counter=0
 		for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
 			counter++
-			ws=fmt.Sprint(">",strconv.itoa(counter),"|",the_inner_clone.Value.(*clone).cell_type,"\n")
+			ws=fmt.Sprint(">",strconv.Itoa(counter),"|",the_inner_clone.Value.(*clone).cell_type,"\n")
 			_,err=f.WriteString(ws)
-			check(err)
+			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
 			ws=fmt.Sprint(the_inner_clone.Value.(*clone).targetSequences,"\n","\n")
 			_,err=f.WriteString(ws)
-			check(err)
+			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
 		}
 	}
 }
