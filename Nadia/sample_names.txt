@@ -1,0 +1,17 @@
+sample name	run id	subject id	cell type
+Lom11_S1_L001	2	Sidorov	Bcell	?
+Lom12_S2_L001	2	Sidorov	BReg	?
+Lom13_S3_L001	2	Kudrjavtseva	Bcell	?
+Lom14_S4_L001	2	Kudrjavtseva	BReg	?
+Lom15_S5_L001	2	Engalitseva	Bcell	?
+Lom16_S6_L001	2	Engalitseva	BReg	?
+Lom17_S7_L001	2	Evseeva	Bcell	?
+Lom18_S8_L001	2	Evseeva	BReg	?
+Lom1_S22_L001	1	Solovjev	Bcell	
+Lom2_S23_L001	1	Solovjev	BReg	
+Lom3_S24_L001	1	Sirokin	Bcell	
+Lom4_S25_L001	1	Sirokin	Breg	
+Lom5_S26_L001	1	Sidorov	Bcell	
+Lom6_S27_L001	1	Sidorov	Breg	
+Lom7_S28_L001	1	Bumba	Bcell	
+Lom8_S29_L001	1	Bumba	Breg	
