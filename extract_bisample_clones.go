@@ -129,8 +129,8 @@ func main() {
 	var max_mismatches_share float64
 	var input_file string
 	//What is the input
-	flag.StringVar(&output_files_folder, "out", "./bisample-clones", "folder with the output files")
-	flag.StringVar(&output_prefix, "prefix", "vgenes", "common prefix of all the output files")
+	flag.StringVar(&output_files_folder, "out", "b-and-b", "folder with the output files")
+	flag.StringVar(&output_prefix, "prefix", "vgenes_", "common prefix of all the output files")
 	flag.StringVar(&output_suffix, "suffix", ".fasta", "common suffix for putput files")
 	//How to combine clones, probably, 1 and 0.05, now we put 0
 	flag.IntVar(&max_terminal_del, "terminal-del", 0, "Maximal terminal CDR3 deletion difference that is allowed inside one clone")
@@ -152,20 +152,12 @@ func main() {
 
 	input_file=flag.Arg(0) // the first positional argumant
 
+	_ = os.Mkdir(output_files_folder, 0755)
+	
 	all_clones := list.New()
 
 	readclones_from_file(input_file, all_clones)
 
-	// for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
-	//	var clone_ptr *clone
-	//	var vgene string
-	//	clone_ptr=the_clone.Value.(*clone)
-	//	vgene=clone_ptr.targetSequences
-	//	vgene=vgene[:len(vgene)-len(clone_ptr.aaSeqCDR3)*3]
-	//	fmt.Print(vgene,"  ",len(vgene),"  ",clone_ptr.aaSeqCDR3,"\n")
-	//}	
-
-	//os.Exit(0) //do something simple 
 
 	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
 	//so, we take *clone one-by-one and present them to all clones already in the combined clones
@@ -197,8 +189,6 @@ func main() {
 		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
 	}
 	
-	//treeteque := list.New()
-	
 	for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
 		counter:=0
 		subject_ids := make(map[string]bool)
@@ -217,6 +207,25 @@ func main() {
 		if	(len(subject_ids)>1) {
 			continue
 		}
-		fmt.Print(counter,"\t",len(cell_types),"\t",len(subject_ids),"\n")
+		//prepare fasta....
+		var outfilename string
+		front:=output_prefix,the_combined_clone.Value.(*list.List).Front().Value.(*clone)
+		outfilename=fmt.Sprint(output_files_folder,"/",front.aaSeqCDR3,"_",front.subject_id,output_suffix)
+		f, err := os.Create(outfilename)
+    check(err)
+    defer f.Close()
+		//writing fasta
+		var ws string
+		ws=fmt.Sprint("; fasta for ",the_combined_clone.Value.(*list.List).Front().Value.(*clone).aaSeqCDR3," clone from ",input_file," file.")
+		counter=0
+		for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+			counter++
+			ws=fmt.Sprint(">",strconv.itoa(counter),"|",the_inner_clone.Value.(*clone).cell_type,"\n")
+			_,err=f.WriteString(ws)
+			check(err)
+			ws=fmt.Sprint(the_inner_clone.Value.(*clone).targetSequences,"\n","\n")
+			_,err=f.WriteString(ws)
+			check(err)
+		}
 	}
 }
