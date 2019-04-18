@@ -14,7 +14,7 @@ CHAIN=(IGH)
 #align -g (--save-reads) is to save reads
 
 #for sample in ${SAMPLES[@]}; do
-for sample in ${SAMPLE[@]}; do
+for sample in ${SAMPLE[@]}; do #it is sigle-sample for test
 	fastq_pair=`find $fastq_path -name "*_${sample}_*"`
 	vdjca_file=${sample}.vdjca
 	if [ ! -f $vdjca_file ]
