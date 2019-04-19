@@ -121,6 +121,29 @@ func readclones_from_file(filename string, clones *list.List) {
 	}
 }
 
+func write_list_of_clones_to_fasta (clonelist *list.List,input_file string, output_files_folder string,output_prefix string,output_suffix string) {
+		var outfilename string
+		front:=clonelist.Front().Value.(*clone)
+		outfilename=fmt.Sprint(output_files_folder,"/",output_prefix,front.aaSeqCDR3,"_",front.subject_id,output_suffix)
+		f, err := os.Create(outfilename)
+    if(err!=nil){log.Fatalf("Error creating file: %v", err)}
+		defer f.Close()
+		//writing fasta
+		var ws string
+		ws=fmt.Sprint("; fasta for ",clonelist.Front().Value.(*clone).aaSeqCDR3," clone from ",input_file," file.")
+		counter:=0
+		for the_inner_clone := clonelist.Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+			counter++
+			ws=fmt.Sprint(">",strconv.Itoa(counter),"|",the_inner_clone.Value.(*clone).cell_type,"\n")
+			_,err=f.WriteString(ws)
+			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
+			ws=fmt.Sprint(the_inner_clone.Value.(*clone).targetSequences,"\n","\n")
+			_,err=f.WriteString(ws)
+			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
+		}
+}
+
+
 func main() {
 	var output_files_folder string //where to write
 	var output_prefix string //the name of output file prefix 
@@ -197,7 +220,7 @@ func main() {
 			counter++
 			subject_ids[the_inner_clone.Value.(*clone).subject_id]=true
 			cell_types[the_inner_clone.Value.(*clone).cell_type]=true
-		}
+		} //how many subjects do we span? how many cell types do we span?
 		if (counter<=2) {
 			continue //2-point tree is dull
 		}
@@ -208,24 +231,6 @@ func main() {
 			continue
 		}
 		//prepare fasta....
-		var outfilename string
-		front:=the_combined_clone.Value.(*list.List).Front().Value.(*clone)
-		outfilename=fmt.Sprint(output_files_folder,"/",output_prefix,front.aaSeqCDR3,"_",front.subject_id,output_suffix)
-		f, err := os.Create(outfilename)
-    if(err!=nil){log.Fatalf("Error creating file: %v", err)}
-		defer f.Close()
-		//writing fasta
-		var ws string
-		ws=fmt.Sprint("; fasta for ",the_combined_clone.Value.(*list.List).Front().Value.(*clone).aaSeqCDR3," clone from ",input_file," file.")
-		counter=0
-		for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-			counter++
-			ws=fmt.Sprint(">",strconv.Itoa(counter),"|",the_inner_clone.Value.(*clone).cell_type,"\n")
-			_,err=f.WriteString(ws)
-			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
-			ws=fmt.Sprint(the_inner_clone.Value.(*clone).targetSequences,"\n","\n")
-			_,err=f.WriteString(ws)
-			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
-		}
+		write_list_of_clones_to_fasta(the_combined_clone.Value.(*list.List),input_file,output_files_folder,output_prefix,output_suffix)
 	}
 }
