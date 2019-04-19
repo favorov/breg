@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"container/list"
 	"encoding/csv"
 	"flag"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 //sample	subject_id	cell_type	cloneCount	cloneFraction	targetSequences	bestVGene	aaSeqCDR3	nMutations.total	aaMutations.total	mut.n	mut.aa.n
@@ -84,14 +84,15 @@ func string_nonstrict_match_from_start(s1 *string, s2 *string, maxmismatch, maxl
 }
 
 //read from file : we want a buffer
-//read appending to clones; it is a list.List of *clone
-func readclones_from_file(filename string, clones *list.List) {
+//read appending to clones; it is a slice of *clone
+func readclones_from_file(filename string) []*clone {
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
 
+	clones:=make([]*clone,0); 
 	rdr := csv.NewReader(bufio.NewReader(f))
 	rdr.Comma = '\t'
 	rdr.Read() //skip header line
@@ -117,27 +118,26 @@ func readclones_from_file(filename string, clones *list.List) {
 		record_clone.aaMutations_total = record[9]
 		record_clone.mut_n, _ = strconv.Atoi(record[10])
 		record_clone.mut_aa_n, _ = strconv.Atoi(record[11])
-		clones.PushBack(&record_clone)
+		clones=append(clones,&record_clone)
 	}
+	return clones
 }
 
-func write_list_of_clones_to_fasta (clonelist *list.List,input_file string, output_files_folder string,output_prefix string,output_suffix string) {
+func write_clones_to_fasta (clones []*clone,input_file string, output_files_folder string,output_prefix string,output_suffix string) {
 		var outfilename string
-		front:=clonelist.Front().Value.(*clone)
-		outfilename=fmt.Sprint(output_files_folder,"/",output_prefix,front.aaSeqCDR3,"_",front.subject_id,output_suffix)
+		outfilename=fmt.Sprint(output_files_folder,"/",output_prefix,clones[0].aaSeqCDR3,"_",clones[0].subject_id,output_suffix)
+		//all subject ids are the same
 		f, err := os.Create(outfilename)
     if(err!=nil){log.Fatalf("Error creating file: %v", err)}
 		defer f.Close()
 		//writing fasta
 		var ws string
-		ws=fmt.Sprint("; fasta for ",clonelist.Front().Value.(*clone).aaSeqCDR3," clone from ",input_file," file.")
-		counter:=0
-		for the_inner_clone := clonelist.Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
-			counter++
-			ws=fmt.Sprint(">",strconv.Itoa(counter),"|",the_inner_clone.Value.(*clone).cell_type,"\n")
+		ws=fmt.Sprint("; fasta for ",clones[0].aaSeqCDR3," clone from ",input_file," file.")
+		for i,clone:=range clones{
+			ws=fmt.Sprint(">",strconv.Itoa(i+1),"|",clone.cell_type,"\n")
 			_,err=f.WriteString(ws)
 			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
-			ws=fmt.Sprint(the_inner_clone.Value.(*clone).targetSequences,"\n","\n")
+			ws=fmt.Sprint(clone.targetSequences,"\n","\n")
 			_,err=f.WriteString(ws)
 			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
 		}
@@ -177,23 +177,23 @@ func main() {
 
 	_ = os.Mkdir(output_files_folder, 0755)
 	
-	all_clones := list.New()
 
-	readclones_from_file(input_file, all_clones)
+	time_start := time.Now()
+	all_clones := readclones_from_file(input_file)
 
 
-	//organise them to combined_clones list.List<*list.List<*clone>> ; we believe that ifeqcl symmetric
+	//organise them to clonoteque [][]*clone ; we believe that ifeqcl symmetric
 	//so, we take *clone one-by-one and present them to all clones already in the combined clones
-	clonoteque := list.New()
+	clonoteque := make([][]*clone,0)
 
-	for the_clone := all_clones.Front(); the_clone != nil; the_clone = the_clone.Next() {
+	for _,the_clone:=range all_clones{
 		var found bool
-		for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+		for slot,the_combined_clone:=range clonoteque{
 			found = false
-			for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+			for _,the_inner_clone := range the_combined_clone {
 				//if the_clone is in combined with a clone from the the_combined_clone list.List, the_clone also goes to the_combined_clone
-				if ifeqcl(the_inner_clone.Value.(*clone), the_clone.Value.(*clone), max_mismatches_share, max_terminal_del) {
-					the_combined_clone.Value.(*list.List).PushBack(the_clone.Value.(*clone))
+				if ifeqcl(the_inner_clone, the_clone, max_mismatches_share, max_terminal_del) {
+					clonoteque[slot]=append(the_combined_clone,the_clone)
 					found = true
 					break
 				}
@@ -208,18 +208,22 @@ func main() {
 			continue
 		}
 		//if we are here not by break - add new combined clone to the clonoteque and put the_clone there
-		clonoteque.PushBack(list.New())
-		clonoteque.Back().Value.(*list.List).PushBack(the_clone.Value.(*clone))
+		clonoteque=append(clonoteque,make([]*clone,0))
+		clonoteque[len(clonoteque)-1]=append(clonoteque[len(clonoteque)-1],the_clone)
 	}
+
+	//for _,the_combined_clone:=range clonoteque{
+	//	print(len(the_combined_clone),"\n")
+	//}
 	
-	for the_combined_clone := clonoteque.Front(); the_combined_clone != nil; the_combined_clone = the_combined_clone.Next() {
+	for _,the_combined_clone:=range clonoteque{
 		counter:=0
 		subject_ids := make(map[string]bool)
 		cell_types := make(map[string]bool)
-		for the_inner_clone := the_combined_clone.Value.(*list.List).Front(); the_inner_clone != nil; the_inner_clone = the_inner_clone.Next() {
+		for _,the_inner_clone := range the_combined_clone{
 			counter++
-			subject_ids[the_inner_clone.Value.(*clone).subject_id]=true
-			cell_types[the_inner_clone.Value.(*clone).cell_type]=true
+			subject_ids[the_inner_clone.subject_id]=true
+			cell_types[the_inner_clone.cell_type]=true
 		} //how many subjects do we span? how many cell types do we span?
 		if (counter<=2) {
 			continue //2-point tree is dull
@@ -231,6 +235,7 @@ func main() {
 			continue
 		}
 		//prepare fasta....
-		write_list_of_clones_to_fasta(the_combined_clone.Value.(*list.List),input_file,output_files_folder,output_prefix,output_suffix)
+		write_clones_to_fasta(the_combined_clone,input_file,output_files_folder,output_prefix,output_suffix)
 	}
+	log.Printf("%s", time.Since(time_start))
 }
