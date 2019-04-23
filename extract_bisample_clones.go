@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+type nmutation struct {
+	region string //CDR1, FR2, CDR2, FR3 
+	mtype string //S
+	posintion int64
+	n_germ string
+	n_cell string
+}
+
 //sample	subject_id	cell_type	cloneCount	cloneFraction	targetSequences	bestVGene	aaSeqCDR3	nMutations.total	aaMutations.total	mut.n	mut.aa.n
 type clone struct {
 	sample string
@@ -23,6 +31,7 @@ type clone struct {
 	bestVGene string 
 	aaSeqCDR3 string
 	nMutations_total string
+	nMutations [] nmutation
 	aaMutations_total string
 	mut_n int
 	mut_aa_n int
@@ -31,6 +40,7 @@ type clone struct {
 //test whether c1 and c2 goes to the same combined clone
 //the function is suppose to be symmetric, ifeqcl(c1,c2) == ifeqcl(c2,c1)
 func ifeqcl(c1 *clone, c2 *clone, max_mismatches_share float64, max_terminal_del int) bool {
+	if (c1.bestVGene != c2.bestVGene) { return false }
 	return string_nonstrict_match(c1.aaSeqCDR3, c2.aaSeqCDR3, max_mismatches_share, max_terminal_del)
 }
 
@@ -115,6 +125,7 @@ func readclones_from_file(filename string) []*clone {
 		record_clone.bestVGene = record[6]
 		record_clone.aaSeqCDR3 = record[7]
 		record_clone.nMutations_total= record[8]
+		record_clone.nMutations = make([]nmutation,0)
 		record_clone.aaMutations_total = record[9]
 		record_clone.mut_n, _ = strconv.Atoi(record[10])
 		record_clone.mut_aa_n, _ = strconv.Atoi(record[11])
@@ -157,7 +168,7 @@ func main() {
 	flag.StringVar(&output_suffix, "suffix", ".fasta", "common suffix for putput files")
 	//How to combine clones, probably, 1 and 0.05, now we put 0
 	flag.IntVar(&max_terminal_del, "terminal-del", 0, "Maximal terminal CDR3 deletion difference that is allowed inside one clone")
-	flag.Float64Var(&max_mismatches_share, "mismatches-share", 0, "Maximal share of in-CDR3 mismatches that is allowed inside one clone")
+	flag.Float64Var(&max_mismatches_share, "mismatches-share", 0.1, "Maximal share of in-CDR3 mismatches that is allowed inside one clone")
 
 	flag.Usage = func() {
   	fmt.Printf("Usage of %s:\n", os.Args[0])
