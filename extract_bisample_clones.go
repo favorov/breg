@@ -145,7 +145,7 @@ func write_clones_to_fasta (clones []*clone,input_file string, output_files_fold
 		var ws string
 		ws=fmt.Sprint("; fasta for ",clones[0].aaSeqCDR3," clone from ",input_file," file.")
 		for i,clone:=range clones{
-			ws=fmt.Sprint(">",strconv.Itoa(i+1),"|",clone.cell_type,"\n")
+			ws=fmt.Sprint(">",clone.cell_type,"|",strconv.Itoa(i+1),"\n")
 			_,err=f.WriteString(ws)
 			if(err!=nil){log.Fatalf("Error writing to fasta file file: %v", err)}
 			ws=fmt.Sprint(clone.targetSequences,"\n","\n")
