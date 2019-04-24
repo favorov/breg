@@ -5,11 +5,12 @@ plottree<-function(fastaname,pdfname=NA){
   if (is.na(pdfname))
     pdfname<-paste0(gsub("\\..*$", "",fastaname),".pdf")
   clone<-read.FASTA(fastaname)
-  cloneDat<-phyDat(clone)
-  tree<-nj(dist.hamming(cloneDat))
+  #cloneDat<-phyDat(clone)
+  #tree<-nj(dist.hamming(cloneDat))
+  tree<-nj(adist(as.character(clone)))
   pdf(pdfname)
   plot(tree,main=fastaname,direction = "rightwards")
-  edgelabels(tree$edge.length, bg="black", col="white", font=.5)
+  edgelabels(round(tree$edge.length), bg="black", col="white", font=.5)
   dev.off()
 }
 
