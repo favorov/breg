@@ -9,8 +9,8 @@ plottree<-function(fastaname,pdfname=NA){
   #tree<-nj(dist.hamming(cloneDat))
   tree<-nj(adist(as.character(clone)))
   pdf(pdfname)
-  plot(tree,main=fastaname,direction = "rightwards")
-  edgelabels(round(tree$edge.length), bg="black", col="white", font=.5)
+  plot(tree,main=fastaname,direction = "rightwards",cex=.5)
+  edgelabels(round(tree$edge.length), bg="blue", col="white",font=2,frame="circle",cex=.5)
   dev.off()
 }
 
