@@ -188,12 +188,18 @@ func read_all_contaminators(fn string) []string {
 
 
 func main() {
-	
 	time_start := time.Now()
 	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
 	fmt.Println(len(targets))
 	contaminators:=read_all_contaminators("contaminatoin_targets.txt")
 	fmt.Println(len(contaminators))
+	for nc,contaminator:= range contaminators{
+		fmt.Println(nc,contaminator)
+		for target,targetname :=range targets {
+			if(string_nonstrict_match(contaminator,target,2,1)) {
+				fmt.Println(nc,targetname)
+			}
+		}
+	}
 	log.Printf("%s", time.Since(time_start))
-
 }
