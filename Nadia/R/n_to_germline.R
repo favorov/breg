@@ -72,29 +72,47 @@ ggsave(paste(script_results_dir,"distGermline.n2.pdf",sep="/"),n2,height=6,width
 ggsave(paste(script_results_dir,"distGermline.n3.pdf",sep="/"),n3,height=6,width=6)
 
 
-n4.1 = ggplot(df,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
-  geom_point(alpha=0.5)+
-  facet_wrap(~subject_id,nrow = 2)
+#n4.1 = ggplot(df,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
+#  geom_point(alpha=0.5)+
+#  facet_wrap(~subject_id,nrow = 2)
 n4.2 = ggplot(df,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
   geom_point(alpha=0.5)+
-  facet_wrap(~subject_id,nrow = 2)+scale_y_log10()
+  facet_wrap(~subject_id,nrow = 2)+scale_y_log10()+
+  xlab("# of AA substitutions to gremline (in V transcript)")
+n4.2.2 = ggplot(df,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
+  geom_point(alpha=0.5)+
+  facet_grid(subject_id~cell_type)+scale_y_log10()+
+  xlab("# of AA substitutions to gremline (in V transcript)")
 
-df.s = df %>% filter(subject_id!="Solovjev")
-df.compare = rbind(df %>% mutate(type="all"),df.s %>% mutate(type="without.Solovjev"))
-n4.3 = ggplot(df.compare,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
-  stat_summary(fun.data=mean_cl_boot,geom="pointrange")+scale_y_log10()+
-  facet_wrap(~type)
+
+# df.s = df %>% filter(subject_id!="Solovjev")
+# df.compare = rbind(df %>% mutate(type="all"),df.s %>% mutate(type="without.Solovjev"))
+# n4.3 = ggplot(df.compare,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
+#   stat_summary(fun.data=mean_sdl, fun.args = list(mult=1),geom="pointrange")+scale_y_log10()+
+#   facet_wrap(~type)
 
 
-ggsave(paste(script_results_dir,"distGermline.n4.1.pdf",sep="/"),n4.1,height=8,width=10)
+#ggsave(paste(script_results_dir,"distGermline.n4.1.pdf",sep="/"),n4.1,height=8,width=10)
 ggsave(paste(script_results_dir,"distGermline.n4.2.pdf",sep="/"),n4.2,height=8,width=10)
-ggsave(paste(script_results_dir,"distGermline.n4.3.pdf",sep="/"),n4.3,height=8,width=10)
+ggsave(paste(script_results_dir,"distGermline.n4.2.2.pdf",sep="/"),n4.2.2,height=10,width=8)
 
-
+############################################################################################
+###################### new contamination investigation #####################################
+######## we leave that for later! ########### doesnt really change our conclusions##########
 ggplot(df %>% filter(subject_id=="Sidorov"),aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
   geom_point(alpha=0.5)+
   facet_wrap(~sample,nrow = 2)+scale_y_log10()
 
+ggplot(df %>% filter(subject_id=="Bumba"),aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+
+  geom_point(alpha=0.5)+
+  facet_wrap(~sample,nrow = 2)+scale_y_log10()
+
+df %>% filter(subject_id=="Sidorov",mut.aa.n==11) %>% select(aaSeqCDR3,aaMutations.total)
+df %>% filter(subject_id=="Bumba",mut.aa.n==11) %>% select(aaSeqCDR3,aaMutations.total)
+df %>% filter(subject_id=="Engalitseva",mut.aa.n==11) %>% select(aaSeqCDR3,aaMutations.total)
+ 
+df %>% filter(aaMutations.total == 'SD1G,SG6S,S*0W,SI1S,SH1Y,SY0N,SI9V,SM11I,ST15K,SY21S') %>%
+  select(subject_id,aaSeqCDR3,aaMutations.total)
 
 #ggplot(df,aes(mut.aa.n,cloneFraction,group=cell_type,color=cell_type))+geom_jitter(alpha=0.5)+
   #facet_grid(subject_id~cell_type)+scale_y_log10()
