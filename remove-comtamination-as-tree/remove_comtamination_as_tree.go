@@ -98,24 +98,24 @@ func parse(fastaFh io.Reader) chan fasta {
 //being wise, we wold make a package with the string_nonstrict_match dunction, but we are not
 //and, it is a bit different
 //shift the start, test the match
-func string_nonstrict_match(s1 string, s2 string, max_mismatch_no int, maxtermdel int) bool {
+func string_nonstrict_match(s1 string, s2 string, max_mismatch_no int, max_termdel_per_end int) bool {
 	l1 := len(s1)
 	l2 := len(s2)
 	//too shifted
-	if l2-l1 > 2*maxtermdel || l1-l2 > 2*maxtermdel {
+	if l2-l1 > 2*max_termdel_per_end || l1-l2 > 2*max_termdel_per_end {
 		return false
 	}
 	//shift s2 to left (e.g. start not from start)
-	for shift := 0; shift <= maxtermdel; shift++ {
+	for shift := 0; shift <= max_termdel_per_end; shift++ {
 		shiftedstring := s2[shift:]
-		if string_nonstrict_match_from_start(s1, shiftedstring, max_mismatch_no, maxtermdel) {
+		if string_nonstrict_match_from_start(s1, shiftedstring, max_mismatch_no, max_termdel_per_end) {
 			return true
 		}
 	}
 	//shift s1 to left (e.g. start not from start)
-	for shift := 1; shift <= maxtermdel; shift++ {
+	for shift := 1; shift <= max_termdel_per_end; shift++ {
 		shiftedstring := s1[shift:]
-		if string_nonstrict_match_from_start(shiftedstring, s2, max_mismatch_no, maxtermdel) {
+		if string_nonstrict_match_from_start(shiftedstring, s2, max_mismatch_no, max_termdel_per_end) {
 			return true
 		}
 	}
@@ -186,20 +186,64 @@ func read_all_contaminators(fn string) []string {
 	return contaminators
 }
 
+type cont_desc struct {
+  id string
+  parent_ids []string
+}
+
+//return is did we add new or just add a 
+func add_to_contaminatoin_targets (contaminatoin_targets map[string]cont_desc, seq, id, parent_id string) bool {
+	cdesc, exist	:= contaminatoin_targets[seq]
+	if exist {
+		if(id!=cdesc.id){
+			log.Fatalf("The target %v has different fasta ids: %s and %s. I am lost.", seq, id, cdesc.id)
+		}
+		cdesc.parent_ids=append(cdesc.parent_ids,parent_id)
+		return false
+	} else {
+		var desc cont_desc
+		desc.id=id
+		desc.parent_ids=append(make([]string,0),parent_id)
+		contaminatoin_targets[seq]=desc
+		return true
+	}
+}
 
 func main() {
+	mutations_per_step:=2
+	term_indel_per_step_per_end:=1
+
 	time_start := time.Now()
 	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
-	fmt.Println(len(targets))
 	contaminators:=read_all_contaminators("contaminatoin_targets.txt")
-	fmt.Println(len(contaminators))
+	contaminatoin_targets:=make(map[string]cont_desc)
+	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
+	added:=0
 	for nc,contaminator:= range contaminators{
-		fmt.Println(nc,contaminator)
 		for target,targetname :=range targets {
-			if(string_nonstrict_match(contaminator,target,2,1)) {
-				fmt.Println(nc,targetname)
+			if string_nonstrict_match(contaminator,target,mutations_per_step,term_indel_per_step_per_end) {
+				if add_to_contaminatoin_targets(contaminatoin_targets,target,targetname,fmt.Sprint("initial-target ",nc)) {added++}
 			}
 		}
 	}
-	log.Printf("%s", time.Since(time_start))
+	log.Println("contaminators: ",len(contaminators)," added: ",added," contaminatoin_targets: ",len(contaminatoin_targets))
+	pass:=1
+	exhausted:=false
+	for !exhausted {
+		exhausted=true 
+		for seq,cont_desc := range contaminatoin_targets{
+			for target,targetname :=range targets {
+				if string_nonstrict_match(seq,target,mutations_per_step,term_indel_per_step_per_end) {
+					if add_to_contaminatoin_targets(contaminatoin_targets,target,targetname,cont_desc.id) {added++}
+					exhausted=false //we have what to add
+				}
+			}
+		}
+		if len(contaminatoin_targets)>=len(targets) {exhausted=true}
+		log.Println("Pass ",pass, " finished...")
+		log.Println(" added: ",added," contaminatoin_targets: ",len(contaminatoin_targets))
+		pass++
+	}
+	fmt.Println(contaminatoin_targets)
+	log.Println(time.Since(time_start))
 }
