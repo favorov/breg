@@ -223,36 +223,37 @@ func main() {
 	contaminatoin_targets:=make(map[string]string)
 	contaminatoin_links:=make(map[relation]bool)
 	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
-	added:=0
 	for nc,contaminator:= range contaminators{
 		for target,targetname :=range targets {
 			if string_nonstrict_match(contaminator,target,mutations_per_step,term_indel_per_step_per_end) {
-				if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,fmt.Sprint("initial-target ",nc)) {added++}
+				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,fmt.Sprint("initial-target ",nc))
 			}
 		}
 	}
-	log.Println("contaminators: ",len(contaminators)," added: ",added," contaminatoin_targets: ",len(contaminatoin_targets))
+	log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links))
 	pass:=1
 	exhausted:=false
-	for !exhausted && pass<11 {
+	for !exhausted {
 		exhausted=true 
 		for seq,cid := range contaminatoin_targets{
 			for target,targetname :=range targets {
 				if targetname==cid {continue}
 				if string_nonstrict_match(seq,target,mutations_per_step,term_indel_per_step_per_end) {
-					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,cid) {added++}
-					exhausted=false //we have what to add
+					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,cid) {
+						exhausted=false
+					}
 				}
 			}
 		}
 		if len(contaminatoin_targets)>=len(targets) {exhausted=true}
 		log.Println("Pass ",pass, " finished...")
-		log.Println(" added: ",added," contaminatoin_targets: ",len(contaminatoin_targets))
+		log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links))
 		pass++
 	}
 	fmt.Println(contaminatoin_targets)
 	fmt.Println(contaminatoin_links)
 
-	fmt.Println("contaminators: ",len(contaminators)," added: ",added," contaminatoin_targets: ",len(contaminatoin_targets)," targets: ", len(targets))
+		log.Println()
+	fmt.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links)," targets: ", len(targets))
 	log.Println(time.Since(time_start))
 }
