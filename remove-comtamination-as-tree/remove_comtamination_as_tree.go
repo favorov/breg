@@ -186,25 +186,29 @@ func read_all_contaminators(fn string) []string {
 	return contaminators
 }
 
-type cont_desc struct {
-  id string
-  parent_ids []string
+type relation struct {
+  id1 string
+  id2 string
 }
 
+
 //return is did we add new or just add a 
-func add_to_contaminatoin_targets (contaminatoin_targets map[string]cont_desc, seq, id, parent_id string) bool {
-	cdesc, exist	:= contaminatoin_targets[seq]
+func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, contamination_links map[relation]bool, seq, id, parent_id string) bool {
+	cid, exist	:= contaminatoin_targets[seq]
 	if exist {
-		if(id!=cdesc.id){
-			log.Fatalf("The target %v has different fasta ids: %s and %s. I am lost.", seq, id, cdesc.id)
+		if(id!=cid){
+			log.Fatalf("The target %v has different fasta ids: %s and %s. I am lost.", seq, id, cid)
 		}
-		cdesc.parent_ids=append(cdesc.parent_ids,parent_id)
-		return false
-	} else {
-		var desc cont_desc
-		desc.id=id
-		desc.parent_ids=append(make([]string,0),parent_id)
-		contaminatoin_targets[seq]=desc
+		rel:=relation{id,parent_id}
+		_,linkexist := contamination_links[rel]
+		if (linkexist) {return false} //we did nothing, link exist
+		_,linkexist = contamination_links[relation{parent_id,id}]
+		if (linkexist) {return false} //we did nothing, rev link exist
+		contamination_links[rel]=true
+		return true
+	} else { //add
+		contaminatoin_targets[seq]=id
+		contamination_links[relation{id,parent_id}]=true
 		return true
 	}
 }
@@ -216,25 +220,27 @@ func main() {
 	time_start := time.Now()
 	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
 	contaminators:=read_all_contaminators("contaminatoin_targets.txt")
-	contaminatoin_targets:=make(map[string]cont_desc)
+	contaminatoin_targets:=make(map[string]string)
+	contaminatoin_links:=make(map[relation]bool)
 	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
 	added:=0
 	for nc,contaminator:= range contaminators{
 		for target,targetname :=range targets {
 			if string_nonstrict_match(contaminator,target,mutations_per_step,term_indel_per_step_per_end) {
-				if add_to_contaminatoin_targets(contaminatoin_targets,target,targetname,fmt.Sprint("initial-target ",nc)) {added++}
+				if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,fmt.Sprint("initial-target ",nc)) {added++}
 			}
 		}
 	}
 	log.Println("contaminators: ",len(contaminators)," added: ",added," contaminatoin_targets: ",len(contaminatoin_targets))
 	pass:=1
 	exhausted:=false
-	for !exhausted {
+	for !exhausted && pass<11 {
 		exhausted=true 
-		for seq,cont_desc := range contaminatoin_targets{
+		for seq,cid := range contaminatoin_targets{
 			for target,targetname :=range targets {
+				if targetname==cid {continue}
 				if string_nonstrict_match(seq,target,mutations_per_step,term_indel_per_step_per_end) {
-					if add_to_contaminatoin_targets(contaminatoin_targets,target,targetname,cont_desc.id) {added++}
+					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,cid) {added++}
 					exhausted=false //we have what to add
 				}
 			}
@@ -245,5 +251,8 @@ func main() {
 		pass++
 	}
 	fmt.Println(contaminatoin_targets)
+	fmt.Println(contaminatoin_links)
+
+	fmt.Println("contaminators: ",len(contaminators)," added: ",added," contaminatoin_targets: ",len(contaminatoin_targets)," targets: ", len(targets))
 	log.Println(time.Since(time_start))
 }
