@@ -214,7 +214,7 @@ func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, cont
 }
 
 func main() {
-	mutations_per_step:=2
+	mutations_per_step:=5
 	term_indel_per_step_per_end:=1
 
 	time_start := time.Now()
@@ -252,8 +252,6 @@ func main() {
 	}
 	fmt.Println(contaminatoin_targets)
 	fmt.Println(contaminatoin_links)
-
-		log.Println()
-	fmt.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links)," targets: ", len(targets))
+	log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links)," targets: ", len(targets))
 	log.Println(time.Since(time_start))
 }
