@@ -250,8 +250,11 @@ func main() {
 		log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links))
 		pass++
 	}
-	fmt.Println(contaminatoin_targets)
-	fmt.Println(contaminatoin_links)
+	//fmt.Println(contaminatoin_targets)
+	//fmt.Println(contaminatoin_links)
+	for target, id := range contaminatoin_targets {
+		fmt.Println(target,"\t",id)
+	}
 	log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links)," targets: ", len(targets))
 	log.Println(time.Since(time_start))
 }
