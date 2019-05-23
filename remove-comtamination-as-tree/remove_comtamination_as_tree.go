@@ -130,8 +130,8 @@ func read_all_contaminators(fn string) []string {
 	rdr.Comma = '\t'
 	head,_:=rdr.Read() //skip header line
 	
-	if head[0]==targetSequences {name_coord=0}
-	if head[1]==targetSequences {name_coord=1}
+	if "targetSequences"==head[0] {name_coord=0}
+	if "targetSequences"==head[1] {name_coord=1}
 
 	for {
 		record, err := rdr.Read()
