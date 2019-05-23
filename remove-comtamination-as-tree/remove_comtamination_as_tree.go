@@ -121,11 +121,18 @@ func read_all_contaminators(fn string) []string {
 		log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
+	
+	name_coord:=-1
+
 
 	contaminators:=make([]string,0); 
 	rdr := csv.NewReader(bufio.NewReader(f))
 	rdr.Comma = '\t'
-	rdr.Read() //skip header line
+	head,_:=rdr.Read() //skip header line
+	
+	if head[0]==targetSequences {name_coord=0}
+	if head[1]==targetSequences {name_coord=1}
+
 	for {
 		record, err := rdr.Read()
 		if err != nil {
@@ -134,7 +141,7 @@ func read_all_contaminators(fn string) []string {
 			}
 			log.Fatal(err)
 		}
-		contaminators=append(contaminators,record[0])	
+		contaminators=append(contaminators,record[name_coord])	
 	}
 	return contaminators
 }
