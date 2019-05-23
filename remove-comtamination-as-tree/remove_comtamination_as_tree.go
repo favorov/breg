@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"github.com/favorov/nwwreject"
 	"time"
 )
 
@@ -9,6 +10,8 @@ import (
 
 //we use https://gist.github.com/quwubin/fdf9a9b40f4c4fbbeb02
 import (
+	"flag"
+	"math"
 	"bytes"
 	"fmt"
 	"log"
@@ -95,56 +98,6 @@ func parse(fastaFh io.Reader) chan fasta {
 //finish of the gist
 
 
-//being wise, we wold make a package with the string_nonstrict_match dunction, but we are not
-//and, it is a bit different
-//shift the start, test the match
-func string_nonstrict_match(s1 string, s2 string, max_mismatch_no int, max_termdel_per_end int) bool {
-	l1 := len(s1)
-	l2 := len(s2)
-	//too shifted
-	if l2-l1 > 2*max_termdel_per_end || l1-l2 > 2*max_termdel_per_end {
-		return false
-	}
-	//shift s2 to left (e.g. start not from start)
-	for shift := 0; shift <= max_termdel_per_end; shift++ {
-		shiftedstring := s2[shift:]
-		if string_nonstrict_match_from_start(s1, shiftedstring, max_mismatch_no, max_termdel_per_end) {
-			return true
-		}
-	}
-	//shift s1 to left (e.g. start not from start)
-	for shift := 1; shift <= max_termdel_per_end; shift++ {
-		shiftedstring := s1[shift:]
-		if string_nonstrict_match_from_start(shiftedstring, s2, max_mismatch_no, max_termdel_per_end) {
-			return true
-		}
-	}
-	return false
-}
-
-func string_nonstrict_match_from_start(s1 string, s2 string, maxmismatch, maxlendiff int) bool {
-	//the strings have common start, and they can differ in lenght no more than maxlendiff
-	if len(s1) > len(s2) {
-		s3 := s1
-		s1 = s2
-		s2 = s3
-	}
-	//s2 now longer or eq
-	if len(s2)-len(s1) > maxlendiff {
-		return false
-	}
-	mismatches := 0
-	for i := 0; i < len(s1); i++ {
-		if s1[i] != s2[i] {
-			mismatches++
-			if mismatches > maxmismatch {
-				return false
-			}
-		}
-	}
-	return true
-}
-
 
 func read_all_targets_from_fasta(fn string) map[string]string {
 	// Open the fastq file specified on the command line
@@ -213,19 +166,30 @@ func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, cont
 	}
 }
 
+var infile = flag.String("in", "", "file with contaminators")
+var threshold = flag.Int("th", math.MaxInt32, "threshold for distance")
+
 func main() {
-	mutations_per_step:=5
-	term_indel_per_step_per_end:=1
+	mismatch_cost:=1	
+	indel_cost:=1
+	
+	flag.Parse()
+	if *infile == "" || *threshold ==  math.MaxInt32 {
+		log.Fatal("Please provide file for contaminators and threshold. See nwwreject --help")
+	}
+
+	distance_threshold:=*threshold
 
 	time_start := time.Now()
 	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
-	contaminators:=read_all_contaminators("contaminatoin_targets.txt")
+	contaminators:=read_all_contaminators(*infile)
 	contaminatoin_targets:=make(map[string]string)
 	contaminatoin_links:=make(map[relation]bool)
 	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
 	for nc,contaminator:= range contaminators{
 		for target,targetname :=range targets {
-			if string_nonstrict_match(contaminator,target,mutations_per_step,term_indel_per_step_per_end) {
+			_,ok:=nwwreject.Distance(contaminator,target,mismatch_cost,indel_cost,distance_threshold)
+			if ok {
 				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,fmt.Sprint("initial-target ",nc))
 			}
 		}
@@ -238,7 +202,8 @@ func main() {
 		for seq,cid := range contaminatoin_targets{
 			for target,targetname :=range targets {
 				if targetname==cid {continue}
-				if string_nonstrict_match(seq,target,mutations_per_step,term_indel_per_step_per_end) {
+				_,ok:=nwwreject.Distance(seq,target,mismatch_cost,indel_cost,distance_threshold)
+				if ok {
 					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,cid) {
 						exhausted=false
 					}
