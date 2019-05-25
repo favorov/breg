@@ -5,7 +5,7 @@ import (
 	"github.com/favorov/nwwreject"
 	"time"
 )
-
+import "runtime/pprof"
 
 
 //we use https://gist.github.com/quwubin/fdf9a9b40f4c4fbbeb02
@@ -44,7 +44,8 @@ func build_fasta(header string, seq bytes.Buffer) (record fasta) {
   return record
 }
 
-func parse(fastaFh io.Reader) chan fasta {
+func parseFastaRecords(fastaFh io.Reader) chan fasta {
+//renamed parse to parseFastaRecords
 
   outputChannel := make(chan fasta)
 
@@ -90,7 +91,7 @@ func parse(fastaFh io.Reader) chan fasta {
     close(outputChannel)
   }()
 
-  
+
   return outputChannel
 }
 
@@ -109,8 +110,10 @@ func read_all_targets_from_fasta(fn string) map[string]string {
 	}
 	defer fh.Close()
 	alltargtets:= make(map[string]string)
-	for record := range parse(fh) {
-		alltargtets[record.seq]=record.id
+	for record := range parseFastaRecords(fh) {
+		_,was:=alltargtets[record.id]
+		if was { log.Fatalf("Nonunique Fasta record. %s",record.id)}
+		alltargtets[record.id]=record.seq
 	}
 	return alltargtets
 }
@@ -121,15 +124,15 @@ func read_all_contaminators(fn string) []string {
 		log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
-	
+
 	name_coord:=-1
 
 
-	contaminators:=make([]string,0); 
+	contaminators:=make([]string,0);
 	rdr := csv.NewReader(bufio.NewReader(f))
 	rdr.Comma = '\t'
 	head,_:=rdr.Read() //skip header line
-	
+
 	if "targetSequences"==head[0] {name_coord=0}
 	if "targetSequences"==head[1] {name_coord=1}
 
@@ -141,34 +144,29 @@ func read_all_contaminators(fn string) []string {
 			}
 			log.Fatal(err)
 		}
-		contaminators=append(contaminators,record[name_coord])	
+		contaminators=append(contaminators,record[name_coord])
 	}
 	return contaminators
 }
 
-type relation struct {
-  id1 string
-  id2 string
-}
-
 
 //return is did we add new or just add a 
-func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, contamination_links map[relation]bool, seq, id, parent_id string) bool {
-	cid, exist	:= contaminatoin_targets[seq]
+func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, contamination_links map[string]bool, seq, id, parent_id string) bool {
+	cseq, exist	:= contaminatoin_targets[id]
 	if exist {
-		if(id!=cid){
-			log.Fatalf("The target %v has different fasta ids: %s and %s. I am lost.", seq, id, cid)
+		if(cseq!=seq){
+			log.Fatalf("The id %v has different sequences: %s and %s, the latter is saved already. I am lost.", id, seq, cseq)
 		}
-		rel:=relation{id,parent_id}
+		rel:=id+"_"+parent_id
 		_,linkexist := contamination_links[rel]
 		if (linkexist) {return false} //we did nothing, link exist
-		_,linkexist = contamination_links[relation{parent_id,id}]
+		_,linkexist = contamination_links[parent_id+"_"+id]
 		if (linkexist) {return false} //we did nothing, rev link exist
 		contamination_links[rel]=true
 		return true
 	} else { //add
-		contaminatoin_targets[seq]=id
-		contamination_links[relation{id,parent_id}]=true
+		contaminatoin_targets[id]=seq
+		contamination_links[parent_id+"_"+id]=true
 		return true
 	}
 }
@@ -177,9 +175,22 @@ var infile = flag.String("in", "", "file with contaminators")
 var threshold = flag.Int("th", math.MaxInt32, "threshold for distance")
 
 func main() {
-	mismatch_cost:=1	
+//profile
+	if false {
+		f, err := os.Create("pofile.prof")
+		if err != nil {
+				log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+				log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+//remainder
+	mismatch_cost:=1
 	indel_cost:=1
-	
+
 	flag.Parse()
 	if *infile == "" || *threshold ==  math.MaxInt32 {
 		log.Fatal("Please provide file for contaminators and threshold. See nwwreject --help")
@@ -191,27 +202,27 @@ func main() {
 	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
 	contaminators:=read_all_contaminators(*infile)
 	contaminatoin_targets:=make(map[string]string)
-	contaminatoin_links:=make(map[relation]bool)
+	contaminatoin_links:=make(map[string]bool) //id1_id2
 	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
 	for nc,contaminator:= range contaminators{
-		for target,targetname :=range targets {
+		for target_id,target :=range targets {
 			_,ok:=nwwreject.Distance(contaminator,target,mismatch_cost,indel_cost,distance_threshold)
 			if ok {
-				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,fmt.Sprint("initial-target ",nc))
+				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,fmt.Sprint("initial-target ",nc))
 			}
 		}
 	}
-	log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links))
+	log.Println("Inited contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links))
 	pass:=1
 	exhausted:=false
 	for !exhausted {
-		exhausted=true 
-		for seq,cid := range contaminatoin_targets{
-			for target,targetname :=range targets {
-				if targetname==cid {continue}
+		exhausted=true
+		for cid,seq := range contaminatoin_targets{
+			for target_id,target :=range targets {
+				if target_id==cid {continue}
 				_,ok:=nwwreject.Distance(seq,target,mismatch_cost,indel_cost,distance_threshold)
 				if ok {
-					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,targetname,cid) {
+					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,cid) {
 						exhausted=false
 					}
 				}
