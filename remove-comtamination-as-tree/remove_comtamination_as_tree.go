@@ -151,7 +151,7 @@ func read_all_contaminators(fn string) []string {
 
 
 //return is did we add new or just add a 
-func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, contamination_links map[string]bool, seq, id, parent_id string) bool {
+func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, contamination_links map[string]int, seq, id, parent_id string, dist int) bool {
 	cseq, exist	:= contaminatoin_targets[id]
 	if exist {
 		if(cseq!=seq){
@@ -162,11 +162,11 @@ func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, cont
 		if (linkexist) {return false} //we did nothing, link exist
 		_,linkexist = contamination_links[parent_id+"_"+id]
 		if (linkexist) {return false} //we did nothing, rev link exist
-		contamination_links[rel]=true
+		contamination_links[rel]=dist
 		return true
 	} else { //add
 		contaminatoin_targets[id]=seq
-		contamination_links[parent_id+"_"+id]=true
+		contamination_links[parent_id+"_"+id]=dist
 		return true
 	}
 }
@@ -202,13 +202,13 @@ func main() {
 	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
 	contaminators:=read_all_contaminators(*infile)
 	contaminatoin_targets:=make(map[string]string)
-	contaminatoin_links:=make(map[string]bool) //id1_id2
+	contaminatoin_links:=make(map[string]int) //id1_id2
 	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
 	for nc,contaminator:= range contaminators{
 		for target_id,target :=range targets {
-			_,ok:=nwwreject.Distance(contaminator,target,mismatch_cost,indel_cost,distance_threshold)
+			dist,ok:=nwwreject.Distance(contaminator,target,mismatch_cost,indel_cost,distance_threshold)
 			if ok {
-				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,fmt.Sprint("initial-target ",nc))
+				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,fmt.Sprint("initial-target ",nc),dist)
 			}
 		}
 	}
@@ -220,9 +220,9 @@ func main() {
 		for cid,seq := range contaminatoin_targets{
 			for target_id,target :=range targets {
 				if target_id==cid {continue}
-				_,ok:=nwwreject.Distance(seq,target,mismatch_cost,indel_cost,distance_threshold)
+				dist,ok:=nwwreject.Distance(seq,target,mismatch_cost,indel_cost,distance_threshold)
 				if ok {
-					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,cid) {
+					if add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,cid,dist) {
 						exhausted=false
 					}
 				}
