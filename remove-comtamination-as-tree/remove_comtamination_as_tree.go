@@ -100,7 +100,7 @@ func parseFastaRecords(fastaFh io.Reader) chan fasta {
 
 
 
-func read_all_targets_from_fasta(fn string) map[string]string {
+func read_all_targets_from_fasta(fn string) (fasta map[string]string, maxlen int) {
 	// Open the fastq file specified on the command line
 	// for reading:
 	fh, err := os.Open(fn)
@@ -109,33 +109,35 @@ func read_all_targets_from_fasta(fn string) map[string]string {
 		log.Fatalf("Error opening file: %v", err)
 	}
 	defer fh.Close()
-	alltargtets:= make(map[string]string)
+	fasta= make(map[string]string)
+	maxlen=0
 	for record := range parseFastaRecords(fh) {
-		_,was:=alltargtets[record.id]
+		_,was:=fasta[record.id]
 		if was { log.Fatalf("Nonunique Fasta record. %s",record.id)}
-		alltargtets[record.id]=record.seq
+		fasta[record.id]=record.seq
+		if maxlen<len(record.seq) {maxlen=len(record.seq)}
 	}
-	return alltargtets
+	return
 }
 
-func read_all_contaminators(fn string) []string {
+func read_all_contaminators(fn string) (contaminators []string, maxlen int) {
 	f, err := os.Open(fn)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
 
-	name_coord:=-1
+	name_column:=-1
 
 
-	contaminators:=make([]string,0);
+	contaminators=make([]string,0);
 	rdr := csv.NewReader(bufio.NewReader(f))
 	rdr.Comma = '\t'
 	head,_:=rdr.Read() //skip header line
 
-	if "targetSequences"==head[0] {name_coord=0}
-	if "targetSequences"==head[1] {name_coord=1}
-
+	if "targetSequences"==head[0] {name_column=0}
+	if "targetSequences"==head[1] {name_column=1}
+	maxlen=0
 	for {
 		record, err := rdr.Read()
 		if err != nil {
@@ -144,9 +146,10 @@ func read_all_contaminators(fn string) []string {
 			}
 			log.Fatal(err)
 		}
-		contaminators=append(contaminators,record[name_coord])
+		contaminators=append(contaminators,record[name_column])
+		if maxlen<len(record[name_column]) {maxlen=len(record[name_column])}
 	}
-	return contaminators
+	return
 }
 
 
@@ -166,7 +169,7 @@ func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, cont
 		return true
 	} else { //add
 		contaminatoin_targets[id]=seq
-		contamination_links[parent_id+"_"+id]=dist
+		contamination_links[id+"_"+parent_id]=dist
 		return true
 	}
 }
@@ -199,11 +202,11 @@ func main() {
 	distance_threshold:=*threshold
 
 	time_start := time.Now()
-	targets:=read_all_targets_from_fasta("unique_targets_nuc.fa")
-	contaminators:=read_all_contaminators(*infile)
+	targets,max_target_len:=read_all_targets_from_fasta("unique_targets_nuc.fa")
+	contaminators,max_contaminator_len:=read_all_contaminators(*infile)
 	contaminatoin_targets:=make(map[string]string)
 	contaminatoin_links:=make(map[string]int) //id1_id2
-	//key is seq desc.id is fasta id, desc.patrent.ids is why did it
+	if max_contaminator_len>max_target_len {max_target_len=max_contaminator_len}
 	for nc,contaminator:= range contaminators{
 		for target_id,target :=range targets {
 			dist,ok:=nwwreject.Distance(contaminator,target,mismatch_cost,indel_cost,distance_threshold)
