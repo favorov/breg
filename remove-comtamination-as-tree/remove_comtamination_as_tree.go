@@ -2,7 +2,8 @@ package main
 
 import (
 	"encoding/csv"
-	"github.com/favorov/nwwreject"
+	//"github.com/favorov/nwwreject"
+	"./nwwreject"
 	"time"
 )
 import "runtime/pprof"
@@ -120,23 +121,27 @@ func read_all_targets_from_fasta(fn string) (fasta map[string]string, maxlen int
 	return
 }
 
-func read_all_contaminators(fn string) (contaminators []string, maxlen int) {
+func read_all_contaminators(fn string) (contaminators map[string]string, maxlen int) {
 	f, err := os.Open(fn)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
 
-	name_column:=-1
+	target_column:=-1
+	id_column:=1
+	counter:=1
 
+	contaminators=make(map[string]string)
 
-	contaminators=make([]string,0);
 	rdr := csv.NewReader(bufio.NewReader(f))
 	rdr.Comma = '\t'
 	head,_:=rdr.Read() //skip header line
 
-	if "targetSequences"==head[0] {name_column=0}
-	if "targetSequences"==head[1] {name_column=1}
+	for i:=range head {
+		if "targetSequences"==head[i] {target_column=i}
+		if "cloneId"==head[i] {id_column=i}
+	}
 	maxlen=0
 	for {
 		record, err := rdr.Read()
@@ -146,8 +151,13 @@ func read_all_contaminators(fn string) (contaminators []string, maxlen int) {
 			}
 			log.Fatal(err)
 		}
-		contaminators=append(contaminators,record[name_column])
-		if maxlen<len(record[name_column]) {maxlen=len(record[name_column])}
+		if (id_column>=0) {
+			contaminators[record[id_column]]=record[target_column]
+		} else {
+			contaminators[fmt.Sprint("contaminator_",counter)]=record[target_column]
+		}
+		counter++
+		if maxlen<len(record[target_column]) {maxlen=len(record[target_column])}
 	}
 	return
 }
@@ -191,6 +201,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 //remainder
+	//log.Println("Using nwwreject version ",nwwreject.Version)
 	mismatch_cost:=1
 	indel_cost:=1
 
@@ -207,11 +218,12 @@ func main() {
 	contaminatoin_targets:=make(map[string]string)
 	contaminatoin_links:=make(map[string]int) //id1_id2
 	if max_contaminator_len>max_target_len {max_target_len=max_contaminator_len}
-	for nc,contaminator:= range contaminators{
+	nwwreject.Init_distance_matrix(max_target_len)
+	for conta_id,contaminator:= range contaminators{
 		for target_id,target :=range targets {
 			dist,ok:=nwwreject.Distance(contaminator,target,mismatch_cost,indel_cost,distance_threshold)
 			if ok {
-				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,fmt.Sprint("initial-target ",nc),dist)
+				add_to_contaminatoin_targets(contaminatoin_targets,contaminatoin_links,target,target_id,conta_id,dist)
 			}
 		}
 	}
