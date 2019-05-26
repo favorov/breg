@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/csv"
-	//"github.com/favorov/nwwreject"
-	"./nwwreject"
+	"github.com/favorov/nwwreject"
+	//"./nwwreject"
 	"time"
 )
 import "runtime/pprof"
