@@ -189,7 +189,7 @@ var threshold = flag.Int("th", math.MaxInt32, "threshold for distance")
 
 func main() {
 //profile
-	if false {
+	if true {
 		f, err := os.Create("pofile.prof")
 		if err != nil {
 				log.Fatal("could not create CPU profile: ", err)
@@ -213,11 +213,13 @@ func main() {
 	distance_threshold:=*threshold
 
 	time_start := time.Now()
+
 	targets,max_target_len:=read_all_targets_from_fasta("unique_targets_nuc.fa")
 	contaminators,max_contaminator_len:=read_all_contaminators(*infile)
 	contaminatoin_targets:=make(map[string]string)
 	contaminatoin_links:=make(map[string]int) //id1_id2
 	if max_contaminator_len>max_target_len {max_target_len=max_contaminator_len}
+
 	nwwreject.Init_distance_matrix(max_target_len)
 	for conta_id,contaminator:= range contaminators{
 		for target_id,target :=range targets {
