@@ -8,7 +8,6 @@ import (
 )
 import "runtime/pprof"
 
-
 //we use https://gist.github.com/quwubin/fdf9a9b40f4c4fbbeb02
 import (
 	"flag"
@@ -187,9 +186,11 @@ func add_to_contaminatoin_targets (contaminatoin_targets map[string]string, cont
 var infile = flag.String("in", "", "file with contaminators")
 var threshold = flag.Int("th", math.MaxInt32, "threshold for distance")
 
+var if_profile bool=false
+
 func main() {
 //profile
-	if true {
+	if if_profile {
 		f, err := os.Create("pofile.prof")
 		if err != nil {
 				log.Fatal("could not create CPU profile: ", err)
@@ -252,7 +253,7 @@ func main() {
 	}
 	//fmt.Println(contaminatoin_targets)
 	//fmt.Println(contaminatoin_links)
-	for target, id := range contaminatoin_targets {
+	for id,target := range contaminatoin_targets {
 		fmt.Println(target,"\t",id)
 	}
 	log.Println("contaminatoin_targets: ",len(contaminatoin_targets),"relations: ",len(contaminatoin_links)," targets: ", len(targets))
